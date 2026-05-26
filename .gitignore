@@ -1,0 +1,29 @@
+# Secrets — never commit env files (templates like .env.example are OK)
+.env
+.env.*
+.env.example
+*.env
+*.env.local
+backend/.env
+backend/.env.*
+frontend/.env
+frontend/.env.*
+/scripts/
+/scripts/a.sh
+# Build outputs
+backend/target/
+frontend/.next/
+frontend/node_modules/
+frontend/out/
+
+# Scan workspace
+/tmp/scan-workspace/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
