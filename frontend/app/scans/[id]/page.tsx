@@ -303,6 +303,7 @@ export default function ScanDetailPage() {
   const logEndRef      = useRef<HTMLDivElement>(null);
   const wsRef          = useRef<WebSocket | null>(null);
   const pollRef        = useRef<ReturnType<typeof setInterval> | null>(null);
+  const aiPollRef      = useRef<ReturnType<typeof setInterval> | null>(null);
   // Prevent the WS effect from re-running just because scan.status changed
   const wsOpenedRef    = useRef(false);
   // Only log "Connected" once per mount (suppress reconnect duplicates)
@@ -392,6 +393,13 @@ export default function ScanDetailPage() {
   useEffect(() => {
     refreshScanDetails().finally(() => setLoading(false));
   }, [refreshScanDetails]);
+
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+      if (aiPollRef.current) clearInterval(aiPollRef.current);
+    };
+  }, []);
 
   // Auto-scroll log terminal
   useEffect(() => {
@@ -654,14 +662,22 @@ export default function ScanDetailPage() {
             onAnalysisRetried={() => {
               setAnalysisLoaded(false);
               setAnalysis(null);
-              // Poll every 10 s until analysis arrives
-              const poll = setInterval(() => {
+              if (aiPollRef.current) clearInterval(aiPollRef.current);
+              aiPollRef.current = setInterval(() => {
                 aiApi.getAnalysis(id)
-                  .then((a) => { setAnalysis(a); setAnalysisLoaded(true); clearInterval(poll); })
+                  .then((a) => {
+                    setAnalysis(a);
+                    setAnalysisLoaded(true);
+                    if (aiPollRef.current) clearInterval(aiPollRef.current);
+                    aiPollRef.current = null;
+                  })
                   .catch(() => { /* not ready yet */ });
               }, 10_000);
-              // Give up after 5 min
-              setTimeout(() => { clearInterval(poll); setAnalysisLoaded(true); }, 5 * 60_000);
+              setTimeout(() => {
+                if (aiPollRef.current) clearInterval(aiPollRef.current);
+                aiPollRef.current = null;
+                setAnalysisLoaded(true);
+              }, 5 * 60_000);
             }}
           />
         </TabsContent>

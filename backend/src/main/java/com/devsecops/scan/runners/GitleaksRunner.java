@@ -5,6 +5,7 @@ import com.devsecops.model.Vulnerability;
 import com.devsecops.model.enums.Severity;
 import com.devsecops.model.enums.ToolName;
 import com.devsecops.model.enums.VulnCategory;
+import com.devsecops.scan.ProcessIo;
 import com.devsecops.scan.ScanContext;
 import com.devsecops.scan.ScanRunner;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -49,9 +50,7 @@ public class GitleaksRunner implements ScanRunner {
             pb.redirectErrorStream(true);
 
             Process process = pb.start();
-            String consoleOutput = new String(process.getInputStream().readAllBytes());
             process.waitFor();
-            toolRun.setRawOutput(consoleOutput);
 
             if (!reportFile.toFile().exists()) {
                 return vulnerabilities;

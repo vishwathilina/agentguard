@@ -5,6 +5,7 @@ import com.devsecops.model.Vulnerability;
 import com.devsecops.model.enums.Severity;
 import com.devsecops.model.enums.ToolName;
 import com.devsecops.model.enums.VulnCategory;
+import com.devsecops.scan.ProcessIo;
 import com.devsecops.scan.ScanContext;
 import com.devsecops.scan.ScanRunner;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -53,9 +54,7 @@ public class OwaspDepCheckRunner implements ScanRunner {
             pb.redirectErrorStream(true);
 
             Process process = pb.start();
-            String output = new String(process.getInputStream().readAllBytes());
             process.waitFor();
-            toolRun.setRawOutput(output);
 
             Path report = findJsonReport(reportDir);
             if (report == null) {

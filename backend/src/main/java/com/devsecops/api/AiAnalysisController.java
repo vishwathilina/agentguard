@@ -120,15 +120,14 @@ public class AiAnalysisController {
         // Delete existing analysis so analyzeAsync can create a fresh one
         aiAnalysisRepository.findByScanId(scanId).ifPresent(aiAnalysisRepository::delete);
 
-        List<Vulnerability> vulns = vulnerabilityRepository.findByScanIdOrderByAiRiskScoreDesc(
-            scanId, org.springframework.data.domain.Pageable.unpaged()).getContent();
-
-        if (vulns.isEmpty()) {
+        int totalFindings = scan.getTotalCritical() + scan.getTotalHigh() + scan.getTotalMedium()
+            + scan.getTotalLow() + scan.getTotalInfo();
+        if (totalFindings == 0) {
             return ResponseEntity.badRequest().body(
                 Map.of("error", "No vulnerabilities to analyze"));
         }
 
-        aiAnalysisService.analyzeAsync(scan, vulns);
+        aiAnalysisService.analyzeAsync(scanId);
 
         return ResponseEntity.accepted().body(
             Map.of("message", "AI analysis queued — check back in a moment"));

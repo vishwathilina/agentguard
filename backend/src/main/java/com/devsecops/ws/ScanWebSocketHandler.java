@@ -30,7 +30,12 @@ public class ScanWebSocketHandler extends TextWebSocketHandler {
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         String scanId = extractScanId(session.getUri());
         Set<WebSocketSession> set = sessions.get(scanId);
-        if (set != null) set.remove(session);
+        if (set != null) {
+            set.remove(session);
+            if (set.isEmpty()) {
+                sessions.remove(scanId, set);
+            }
+        }
         log.debug("WS closed: scan={} status={}", scanId, status);
     }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { AiAnalysis, Scan } from "@/types";
 import { Brain, TrendingUp, ShieldCheck, Info, RotateCcw, Loader2 } from "lucide-react";
 import { severityColor } from "@/lib/utils";
@@ -16,6 +16,13 @@ interface Props {
 export function AiSummaryPanel({ analysis, analysisLoaded, scan, onAnalysisRetried }: Props) {
   const [retrying, setRetrying] = useState(false);
   const [retryMessage, setRetryMessage] = useState<string | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, []);
 
   async function handleRetry() {
     if (retrying) return;
@@ -24,18 +31,22 @@ export function AiSummaryPanel({ analysis, analysisLoaded, scan, onAnalysisRetri
     try {
       const res = await aiApi.retryAnalysis(scan.id);
       setRetryMessage(res.message);
-      // Poll for result every 10 s for up to 5 minutes
+      if (pollRef.current) clearInterval(pollRef.current);
       let attempts = 0;
-      const interval = setInterval(async () => {
+      pollRef.current = setInterval(async () => {
         attempts++;
         try {
           await aiApi.getAnalysis(scan.id);
-          clearInterval(interval);
+          if (pollRef.current) clearInterval(pollRef.current);
+          pollRef.current = null;
           onAnalysisRetried?.();
         } catch {
           // 204 No Content means not ready yet
         }
-        if (attempts >= 30) clearInterval(interval);
+        if (attempts >= 30 && pollRef.current) {
+          clearInterval(pollRef.current);
+          pollRef.current = null;
+        }
       }, 10_000);
     } catch (err: any) {
       setRetryMessage(err?.response?.data?.error ?? "Failed to queue AI analysis. Try again.");

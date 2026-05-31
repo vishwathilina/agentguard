@@ -68,9 +68,14 @@ public class GithubTokenAuthFilter extends OncePerRequestFilter {
     private User resolveUser(String token) {
         long now = System.currentTimeMillis();
 
+        evictExpiredTokens(now);
+
         CachedAuth cached = tokenCache.get(token);
         if (cached != null && cached.expiresAt() > now) {
             return cached.user();
+        }
+        if (cached != null) {
+            tokenCache.remove(token, cached);
         }
 
         RestTemplate restTemplate = new RestTemplate();
@@ -122,5 +127,9 @@ public class GithubTokenAuthFilter extends OncePerRequestFilter {
         tokenCache.put(token, new CachedAuth(user, now + CACHE_TTL_MS));
         log.info("Authenticated via GitHub token: {}", login);
         return user;
+    }
+
+    private void evictExpiredTokens(long now) {
+        tokenCache.entrySet().removeIf(e -> e.getValue().expiresAt() <= now);
     }
 }

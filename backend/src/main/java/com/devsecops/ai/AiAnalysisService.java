@@ -5,7 +5,9 @@ import com.devsecops.model.Scan;
 import com.devsecops.model.Vulnerability;
 import com.devsecops.model.enums.Severity;
 import com.devsecops.repository.AiAnalysisRepository;
+import com.devsecops.repository.ScanRepository;
 import com.devsecops.repository.VulnerabilityRepository;
+import org.springframework.data.domain.Pageable;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,7 @@ public class AiAnalysisService {
 
     private final VulnerabilityAnalysisAI analysisAI;
     private final AiAnalysisRepository aiAnalysisRepository;
+    private final ScanRepository scanRepository;
     private final VulnerabilityRepository vulnerabilityRepository;
     private final ObjectMapper objectMapper;
 
@@ -34,21 +37,30 @@ public class AiAnalysisService {
 
     @Async("aiTaskExecutor")
     @Transactional
-    public void analyzeAsync(Scan scan, List<Vulnerability> vulnerabilities) {
+    public void analyzeAsync(UUID scanId) {
+        Scan scan = scanRepository.findById(scanId).orElse(null);
+        if (scan == null) {
+            log.warn("Scan {} not found — skipping AI analysis", scanId);
+            return;
+        }
+
+        List<Vulnerability> vulnerabilities = vulnerabilityRepository
+            .findByScanIdOrderByAiRiskScoreDesc(scanId, Pageable.unpaged())
+            .getContent();
         if (vulnerabilities.isEmpty()) {
-            log.info("No vulnerabilities for scan {} — skipping AI analysis", scan.getId());
+            log.info("No vulnerabilities for scan {} — skipping AI analysis", scanId);
             return;
         }
 
         // Skip if analysis already exists (idempotent)
-        if (aiAnalysisRepository.findByScanId(scan.getId()).isPresent()) {
-            log.info("AI analysis already exists for scan {} — skipping", scan.getId());
+        if (aiAnalysisRepository.findByScanId(scanId).isPresent()) {
+            log.info("AI analysis already exists for scan {} — skipping", scanId);
             return;
         }
 
         long startMs = System.currentTimeMillis();
         log.info("Starting AI analysis for scan {} with {} vulnerabilities",
-                scan.getId(), vulnerabilities.size());
+                scanId, vulnerabilities.size());
 
         try {
             // Take top 30 by severity for analysis prompt

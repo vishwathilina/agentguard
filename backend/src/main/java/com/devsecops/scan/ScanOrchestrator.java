@@ -140,7 +140,7 @@ public class ScanOrchestrator {
 
             updateScanStatus(scan, ScanStatus.COMPLETED);
             // Pass captured vuln list so AI analysis starts after COMPLETE is sent
-            notifyScanCompleteAfterCommit(scanIdStr, scan, List.copyOf(allVulns));
+            notifyScanCompleteAfterCommit(scanIdStr, scan, !allVulns.isEmpty());
 
         } catch (Exception e) {
             log.error("Scan {} failed", scanIdStr, e);
@@ -193,8 +193,7 @@ public class ScanOrchestrator {
         };
     }
 
-    private void notifyScanCompleteAfterCommit(String scanIdStr, Scan scan,
-                                               List<Vulnerability> vulns) {
+    private void notifyScanCompleteAfterCommit(String scanIdStr, Scan scan, boolean queueAiAnalysis) {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
@@ -204,10 +203,10 @@ public class ScanOrchestrator {
                 // 2. Discord webhook notification — direct, no message broker needed
                 discordNotificationService.notifyAsync(scan.getId());
 
-                // 3. Start AI analysis in background — scan is already marked complete for the user
-                if (!vulns.isEmpty()) {
-                    log.info("Queueing AI analysis for scan {} ({} vulns)", scanIdStr, vulns.size());
-                    aiAnalysisService.analyzeAsync(scan, vulns);
+                // 3. Start AI analysis in background — loads vulns from DB, not in-memory list
+                if (queueAiAnalysis) {
+                    log.info("Queueing AI analysis for scan {}", scanIdStr);
+                    aiAnalysisService.analyzeAsync(scan.getId());
                 }
             }
         });

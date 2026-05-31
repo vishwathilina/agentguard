@@ -5,6 +5,7 @@ import com.devsecops.model.Vulnerability;
 import com.devsecops.model.enums.Severity;
 import com.devsecops.model.enums.ToolName;
 import com.devsecops.model.enums.VulnCategory;
+import com.devsecops.scan.ProcessIo;
 import com.devsecops.scan.ScanContext;
 import com.devsecops.scan.ScanRunner;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -40,7 +41,6 @@ public class NpmAuditRunner implements ScanRunner {
         try {
             Optional<Path> packageRoot = findPackageJsonRoot(context.sourceRoot());
             if (packageRoot.isEmpty()) {
-                toolRun.setRawOutput("No package.json found under " + context.sourceRoot());
                 return vulnerabilities;
             }
 
@@ -57,9 +57,8 @@ public class NpmAuditRunner implements ScanRunner {
             pb.redirectErrorStream(true);
 
             Process process = pb.start();
-            String output = new String(process.getInputStream().readAllBytes());
+            String output = ProcessIo.readUtf8(process.getInputStream());
             process.waitFor();
-            toolRun.setRawOutput(output);
 
             JsonNode root = objectMapper.readTree(output);
             JsonNode vulns = root.path("vulnerabilities");

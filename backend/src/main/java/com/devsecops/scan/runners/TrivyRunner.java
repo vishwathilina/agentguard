@@ -6,6 +6,7 @@ import com.devsecops.model.enums.Severity;
 import com.devsecops.model.enums.TargetType;
 import com.devsecops.model.enums.ToolName;
 import com.devsecops.model.enums.VulnCategory;
+import com.devsecops.scan.ProcessIo;
 import com.devsecops.scan.ScanContext;
 import com.devsecops.scan.ScanRunner;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -53,10 +54,8 @@ public class TrivyRunner implements ScanRunner {
             pb.redirectErrorStream(true);
 
             Process process = pb.start();
-            String output = new String(process.getInputStream().readAllBytes());
+            String output = ProcessIo.readUtf8(process.getInputStream());
             int exitCode = process.waitFor();
-
-            toolRun.setRawOutput(output);
 
             if (exitCode != 0 && exitCode != 5) {
                 log.warn("Trivy exited with code {} for target: {}", exitCode, context.target());
@@ -67,6 +66,7 @@ public class TrivyRunner implements ScanRunner {
         } catch (Exception e) {
             log.error("Trivy scan failed for target: {}", context.target(), e);
             toolRun.setErrorMessage(e.getMessage());
+            toolRun.setRawOutput(ProcessIo.truncateForStorage(e.toString(), 2000));
         }
 
         return vulnerabilities;
