@@ -1,21 +1,34 @@
 "use client";
 
-import { Brain, AlertCircle, Flame, AlertTriangle, ArrowRight } from "lucide-react";
 import { Scan } from "@/types";
 import Link from "next/link";
+import { CoolIcon, type CoolIconName, type IconTone } from "@/components/icons/CoolIcon";
 
 interface Props { scans: Scan[] }
 
 function SeverityIcon({ level }: { level: "CRITICAL" | "HIGH" | "MEDIUM" }) {
-  if (level === "CRITICAL") return <AlertCircle className="h-3 w-3 shrink-0" style={{ color: "#f85149" }} />;
-  if (level === "HIGH")     return <Flame        className="h-3 w-3 shrink-0" style={{ color: "#e3b341" }} />;
-  return                           <AlertTriangle className="h-3 w-3 shrink-0" style={{ color: "#d29922" }} />;
+  const meta: Record<string, { icon: CoolIconName; tone: IconTone }> = {
+    CRITICAL: { icon: "warning", tone: "danger" },
+    HIGH:     { icon: "shield-warning", tone: "warning" },
+    MEDIUM:   { icon: "warning", tone: "coral" },
+  };
+  const m = meta[level];
+  return <CoolIcon name={m.icon} tone={m.tone} size={14} className="shrink-0 mt-0.5" />;
 }
 
 const SEVERITY_BADGE: Record<string, { color: string; bg: string }> = {
-  CRITICAL: { color: "#f85149", bg: "rgba(248,81,73,0.12)" },
-  HIGH:     { color: "#e3b341", bg: "rgba(227,179,65,0.12)" },
-  MEDIUM:   { color: "#d29922", bg: "rgba(210,153,34,0.10)" },
+  CRITICAL: {
+    color: "var(--ag-danger)",
+    bg: "color-mix(in srgb, var(--ag-danger) 12%, transparent)",
+  },
+  HIGH: {
+    color: "var(--ag-warning)",
+    bg: "color-mix(in srgb, var(--ag-warning) 12%, transparent)",
+  },
+  MEDIUM: {
+    color: "var(--ag-orange)",
+    bg: "color-mix(in srgb, var(--ag-orange) 10%, transparent)",
+  },
 };
 
 export function AiInsightsCard({ scans }: Props) {
@@ -52,30 +65,33 @@ export function AiInsightsCard({ scans }: Props) {
   }
 
   return (
-    <div
-      className="rounded-xl p-5 flex flex-col"
-      style={{ background: "#161b22", border: "1px solid #30363d" }}
-    >
-      {/* Header */}
+    <div className="ag-card p-5 flex flex-col">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2.5">
           <div
             className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0"
-            style={{ background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)" }}
+            style={{
+              background: "color-mix(in srgb, var(--ag-cyan) 14%, transparent)",
+              border: "1px solid color-mix(in srgb, var(--ag-cyan) 32%, transparent)",
+              boxShadow: "var(--ag-glow-cyan)",
+            }}
           >
-            <Brain className="h-4 w-4" style={{ color: "#818cf8" }} />
+            <CoolIcon name="data" tone="primary" size={18} />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-white">AI Agent Insights</h3>
-            <p className="text-[10px]" style={{ color: "#8b949e" }}>Prioritized findings</p>
+            <h3 className="ag-text-section">Next best actions</h3>
+            <p className="ag-text-meta mt-1">Prioritized findings</p>
           </div>
         </div>
-        <Link href="/scans" className="transition-colors hover:text-white" style={{ color: "#6e7681" }}>
-          <ArrowRight className="h-4 w-4" />
+        <Link
+          href="/scans"
+          className="transition-opacity hover:opacity-80"
+          style={{ color: "var(--ag-cyan)" }}
+        >
+          <CoolIcon name="chevron-down" tone="primary" size={16} className="rotate-[-90deg]" />
         </Link>
       </div>
 
-      {/* Insights */}
       <div className="space-y-3 flex-1">
         {insights.map((item, i) => {
           const badge = SEVERITY_BADGE[item.severity];
@@ -83,17 +99,20 @@ export function AiInsightsCard({ scans }: Props) {
             <div
               key={i}
               className="flex items-start gap-2.5 rounded-lg p-3"
-              style={{ background: "#0d1117", border: "1px solid #21262d" }}
+              style={{
+                background: "var(--ag-bg)",
+                border: "1px solid var(--ag-border)",
+              }}
             >
               <SeverityIcon level={item.severity} />
               <div className="flex-1 min-w-0">
                 <span
-                  className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded mb-1"
+                  className="inline-flex items-center ag-text-label px-1.5 py-0.5 rounded mb-1"
                   style={{ background: badge.bg, color: badge.color }}
                 >
                   {item.severity}
                 </span>
-                <p className="text-xs leading-relaxed" style={{ color: "#c9d1d9" }}>
+                <p className="ag-text-title font-normal leading-relaxed">
                   {item.text}
                 </p>
               </div>

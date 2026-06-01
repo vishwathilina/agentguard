@@ -57,18 +57,13 @@ export function InfrastructureCard({ scans }: Props) {
   ];
 
   return (
-    <div
-      className="rounded-xl p-5"
-      style={{ background: "#161b22", border: "1px solid #30363d" }}
-    >
+    <div className="ag-card p-5">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-sm font-semibold text-white">Infrastructure</h3>
-          <p className="text-[10px] mt-0.5" style={{ color: "#8b949e" }}>
-            Scanned targets by type
-          </p>
+          <h3 className="ag-text-section">Infrastructure</h3>
+          <p className="ag-text-meta mt-1">Scanned targets by type</p>
         </div>
-        <Link href="/repositories" className="transition-colors hover:text-white" style={{ color: "#6e7681" }}>
+        <Link href="/repositories" className="transition-opacity hover:opacity-80" style={{ color: "var(--ag-cyan)" }}>
           <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
@@ -78,7 +73,7 @@ export function InfrastructureCard({ scans }: Props) {
           <div
             key={label}
             className="rounded-lg p-3 flex items-center gap-3"
-            style={{ background: "#0d1117", border: "1px solid #21262d" }}
+            style={{ background: "var(--ag-bg)", border: "1px solid var(--ag-border)" }}
           >
             <div
               className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0"
@@ -87,15 +82,10 @@ export function InfrastructureCard({ scans }: Props) {
               <Icon className="h-4 w-4" style={{ color }} />
             </div>
             <div>
-              <p
-                className="text-xl font-bold font-mono tabular-nums leading-none"
-                style={{ color }}
-              >
+              <p className="ag-text-metric-lg leading-none" style={{ color, fontSize: "1.5rem" }}>
                 {value}
               </p>
-              <p className="text-[10px] mt-0.5" style={{ color: "#8b949e" }}>
-                {label}
-              </p>
+              <p className="ag-text-meta mt-1">{label}</p>
             </div>
           </div>
         ))}

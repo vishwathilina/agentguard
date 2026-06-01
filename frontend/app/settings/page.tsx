@@ -3,10 +3,8 @@
 import { useEffect, useState } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { settingsApi, NotificationConfig } from "@/lib/api";
-import {
-  Settings, CheckCircle2, Bell, Trash2, Plus,
-  Save, RefreshCw, AlertCircle, ExternalLink, Info, Send,
-} from "lucide-react";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { CoolIcon } from "@/components/icons/CoolIcon";
 
 function GithubIcon({ className }: { className?: string }) {
   return (
@@ -21,18 +19,17 @@ const SEVERITY_OPTIONS = ["CRITICAL", "HIGH", "MEDIUM", "LOW"] as const;
 export default function SettingsPage() {
   const { data: session } = useSession();
 
-  // Discord webhook state
-  const [configs, setConfigs]       = useState<NotificationConfig[]>([]);
+  const [configs, setConfigs] = useState<NotificationConfig[]>([]);
   const [loadingCfg, setLoadingCfg] = useState(true);
   const [webhookUrl, setWebhookUrl] = useState("");
   const [minSeverity, setMinSeverity] = useState("HIGH");
-  const [enabled, setEnabled]       = useState(true);
-  const [saving, setSaving]         = useState(false);
-  const [saveError, setSaveError]   = useState<string | null>(null);
-  const [saveOk, setSaveOk]         = useState(false);
-  const [deleting, setDeleting]     = useState<string | null>(null);
+  const [enabled, setEnabled] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveOk, setSaveOk] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [testing, setTesting]       = useState(false);
+  const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
 
   useEffect(() => {
@@ -52,8 +49,10 @@ export default function SettingsPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!webhookUrl.startsWith("https://discord.com/api/webhooks/") &&
-        !webhookUrl.startsWith("https://discordapp.com/api/webhooks/")) {
+    if (
+      !webhookUrl.startsWith("https://discord.com/api/webhooks/") &&
+      !webhookUrl.startsWith("https://discordapp.com/api/webhooks/")
+    ) {
       setSaveError("URL must start with https://discord.com/api/webhooks/");
       return;
     }
@@ -69,8 +68,11 @@ export default function SettingsPage() {
       setWebhookUrl("");
       setSaveOk(true);
       setTimeout(() => setSaveOk(false), 3000);
-    } catch (err: any) {
-      setSaveError(err?.response?.data?.message ?? "Failed to save webhook. Check the URL.");
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        "Failed to save webhook. Check the URL.";
+      setSaveError(msg);
     } finally {
       setSaving(false);
     }
@@ -82,10 +84,12 @@ export default function SettingsPage() {
     try {
       await settingsApi.deleteNotification(id);
       setConfigs((prev) => prev.filter((c) => c.id !== id));
-    } catch (err: any) {
-      const msg = err?.response?.data?.message ?? err?.message ?? "Failed to delete webhook";
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        (err as Error)?.message ??
+        "Failed to delete webhook";
       setDeleteError(msg);
-      console.error("Delete failed:", err);
     } finally {
       setDeleting(null);
     }
@@ -97,8 +101,10 @@ export default function SettingsPage() {
     try {
       const res = await settingsApi.testWebhook();
       setTestResult({ ok: res.success, msg: res.message });
-    } catch (err: any) {
-      const msg = err?.response?.data?.message ?? "Test request failed";
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        "Test request failed";
       setTestResult({ ok: false, msg });
     } finally {
       setTesting(false);
@@ -110,243 +116,240 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-5">
-      {/* Page header */}
-      <div className="flex items-center gap-3 pb-1">
-        <div
-          className="h-8 w-8 rounded-lg flex items-center justify-center"
-          style={{ background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)" }}
-        >
-          <Settings className="h-4 w-4" style={{ color: "#818cf8" }} />
-        </div>
-        <div>
-          <h1 className="text-base font-semibold text-white leading-none">Settings</h1>
-          <p className="text-[11px] mt-0.5" style={{ color: "#8b949e" }}>
-            Manage integrations and notification preferences
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        icon="settings"
+        tone="primary"
+        title="Settings"
+        subtitle="Manage integrations and notification preferences"
+      />
 
-      {/* ── GitHub Connection ─────────────────────────────────────── */}
-      <section
-        className="rounded-xl overflow-hidden"
-        style={{ background: "#161b22", border: "1px solid #30363d" }}
-      >
-        <div className="px-5 py-4" style={{ borderBottom: "1px solid #30363d" }}>
+      <section className="ag-card overflow-hidden p-0">
+        <div className="px-5 py-4 border-b ag-divider">
           <div className="flex items-center gap-2">
-            <GithubIcon className="h-4 w-4" style={{ color: "#c9d1d9" }} />
-            <h2 className="text-sm font-semibold text-white">GitHub Connection</h2>
+            <GithubIcon className="h-4 w-4 text-[var(--ag-text)]" />
+            <h2 className="ag-text-section">GitHub connection</h2>
           </div>
-          <p className="text-xs mt-0.5" style={{ color: "#8b949e" }}>
-            Required for scanning repositories and accessing your code.
-          </p>
+          <p className="ag-text-meta mt-1">Required for scanning repositories and accessing your code.</p>
         </div>
         <div className="px-5 py-4">
           {session?.user ? (
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-3">
                 {session.user.image && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={session.user.image}
-                    alt="avatar"
-                    className="h-9 w-9 rounded-full"
-                  />
+                  <img src={session.user.image} alt="avatar" className="h-9 w-9 rounded-full" />
                 )}
                 <div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-white">{session.user.name}</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="ag-text-title">{session.user.name}</p>
                     <span
-                      className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
-                      style={{ background: "rgba(63,185,80,0.12)", color: "#3fb950", border: "1px solid rgba(63,185,80,0.25)" }}
+                      className="inline-flex items-center gap-1 font-semibold px-1.5 py-0.5 rounded-full"
+                      style={{
+                        fontSize: "var(--ag-text-label)",
+                        background: "color-mix(in srgb, var(--ag-safe) 12%, transparent)",
+                        color: "var(--ag-safe)",
+                        border: "1px solid color-mix(in srgb, var(--ag-safe) 28%, transparent)",
+                      }}
                     >
-                      <CheckCircle2 className="h-2.5 w-2.5" /> Connected
+                      <CoolIcon name="shield-check" tone="safe" size={11} />
+                      Connected
                     </span>
                   </div>
-                  <p className="text-xs mt-0.5" style={{ color: "#6e7681" }}>{session.user.email}</p>
+                  <p className="ag-text-meta mt-0.5">{session.user.email}</p>
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => signIn("github", { callbackUrl: "/settings" })}
-                className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg transition-colors"
-                style={{ background: "#0d1117", border: "1px solid #30363d", color: "#8b949e" }}
+                className="ag-btn-secondary"
               >
-                <RefreshCw className="h-3.5 w-3.5" /> Re-authorize
+                <CoolIcon name="chevron-down" tone="muted" size={14} className="rotate-180" />
+                Re-authorize
               </button>
             </div>
           ) : (
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2 text-sm" style={{ color: "#8b949e" }}>
-                <AlertCircle className="h-4 w-4" style={{ color: "#e3b341" }} />
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-2 ag-text-nav text-[var(--ag-text-muted)]">
+                <CoolIcon name="warning" tone="warning" size={16} />
                 Not connected to GitHub
               </div>
               <button
+                type="button"
                 onClick={() => signIn("github", { callbackUrl: "/settings" })}
-                className="flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg text-white transition-opacity hover:opacity-90"
-                style={{ background: "#6366f1" }}
+                className="ag-btn-primary"
               >
-                <GithubIcon className="h-4 w-4" /> Connect GitHub
+                <GithubIcon className="h-4 w-4" />
+                Connect GitHub
               </button>
             </div>
           )}
         </div>
-        <div className="px-5 py-3 flex items-start gap-2" style={{ background: "#0d1117", borderTop: "1px solid #30363d" }}>
-          <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color: "#6e7681" }} />
-          <p className="text-[11px]" style={{ color: "#6e7681" }}>
-            AgentGuard uses your GitHub OAuth token to clone and scan repositories.
-            The token is encrypted at rest and never shared.
+        <div
+          className="px-5 py-3 flex items-start gap-2 border-t ag-divider"
+          style={{ background: "var(--ag-bg)" }}
+        >
+          <CoolIcon name="shield" tone="muted" size={14} className="mt-0.5 shrink-0" />
+          <p className="ag-text-body">
+            AgentGuard uses your GitHub OAuth token to clone and scan repositories. The token is
+            encrypted at rest and never shared.
           </p>
         </div>
       </section>
 
-      {/* ── Discord Webhook ──────────────────────────────────────── */}
-      <section
-        className="rounded-xl overflow-hidden"
-        style={{ background: "#161b22", border: "1px solid #30363d" }}
-      >
-        <div className="px-5 py-4" style={{ borderBottom: "1px solid #30363d" }}>
+      <section className="ag-card overflow-hidden p-0">
+        <div className="px-5 py-4 border-b ag-divider">
           <div className="flex items-center gap-2">
-            {/* Discord icon */}
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="#818cf8">
-              <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.033.054a19.924 19.924 0 0 0 5.993 3.03.077.077 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+              <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.033.054a19.924 19.924 0 0 0 5.993 3.03.077.077 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
             </svg>
-            <h2 className="text-sm font-semibold text-white">Discord Webhook</h2>
+            <h2 className="ag-text-section">Discord webhook</h2>
           </div>
-          <p className="text-xs mt-0.5" style={{ color: "#8b949e" }}>
+          <p className="ag-text-meta mt-1">
             Receive security alerts in your Discord channel when scans find vulnerabilities.
           </p>
         </div>
 
-        {/* Existing config */}
         {!loadingCfg && existingDiscord && (
-          <div className="px-5 py-4" style={{ borderBottom: "1px solid #30363d" }}>
-            <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: "#6e7681" }}>
-              Active Webhook
-            </p>
+          <div className="px-5 py-4 border-b ag-divider">
+            <p className="ag-text-label mb-3">Active webhook</p>
             <div
               className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5"
-              style={{ background: "#0d1117", border: "1px solid #21262d" }}
+              style={{ background: "var(--ag-bg)", border: "1px solid var(--ag-border)" }}
             >
-              <div className="flex items-center gap-2 min-w-0">
-                <Bell className="h-3.5 w-3.5 shrink-0" style={{ color: "#818cf8" }} />
-                <span className="text-xs font-mono truncate" style={{ color: "#c9d1d9" }}>
-                  {existingDiscord.webhookUrlMasked}
-                </span>
+              <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                <CoolIcon name="bell" tone="primary" size={14} className="shrink-0" />
+                <span className="ag-text-meta font-mono truncate">{existingDiscord.webhookUrlMasked}</span>
                 <span
-                  className="text-[10px] px-1.5 py-0.5 rounded-full shrink-0"
-                  style={
-                    existingDiscord.enabled
-                      ? { background: "rgba(63,185,80,0.12)", color: "#3fb950", border: "1px solid rgba(63,185,80,0.25)" }
-                      : { background: "rgba(139,148,158,0.10)", color: "#8b949e", border: "1px solid #30363d" }
-                  }
+                  className="font-semibold px-1.5 py-0.5 rounded-full shrink-0"
+                  style={{
+                    fontSize: "var(--ag-text-label)",
+                    ...(existingDiscord.enabled
+                      ? {
+                          background: "color-mix(in srgb, var(--ag-safe) 12%, transparent)",
+                          color: "var(--ag-safe)",
+                          border: "1px solid color-mix(in srgb, var(--ag-safe) 28%, transparent)",
+                        }
+                      : {
+                          background: "color-mix(in srgb, var(--ag-neutral) 8%, transparent)",
+                          color: "var(--ag-text-muted)",
+                          border: "1px solid var(--ag-border)",
+                        }),
+                  }}
                 >
                   {existingDiscord.enabled ? "Active" : "Disabled"}
                 </span>
                 <span
-                  className="text-[10px] px-1.5 py-0.5 rounded-full shrink-0"
-                  style={{ background: "rgba(99,102,241,0.10)", color: "#818cf8", border: "1px solid rgba(99,102,241,0.2)" }}
+                  className="font-semibold px-1.5 py-0.5 rounded-full shrink-0"
+                  style={{
+                    fontSize: "var(--ag-text-label)",
+                    background: "color-mix(in srgb, var(--ag-cyan) 10%, transparent)",
+                    color: "var(--ag-cyan)",
+                    border: "1px solid color-mix(in srgb, var(--ag-cyan) 22%, transparent)",
+                  }}
                 >
                   Min: {existingDiscord.minSeverity}
                 </span>
               </div>
               <div className="flex items-center gap-1 shrink-0">
                 <button
+                  type="button"
                   onClick={handleTest}
                   disabled={testing}
-                  title="Send test message to Discord"
-                  className="p-1.5 rounded transition-colors hover:text-indigo-400 disabled:opacity-40"
-                  style={{ color: "#6e7681" }}
+                  title="Send test message"
+                  className="p-1.5 rounded transition-opacity hover:opacity-80 disabled:opacity-40 text-[var(--ag-text-muted)]"
                 >
-                  {testing
-                    ? <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                    : <Send className="h-3.5 w-3.5" />
-                  }
+                  {testing ? (
+                    <div className="h-3.5 w-3.5 rounded-full border-2 border-t-transparent animate-spin ag-spinner" />
+                  ) : (
+                    <CoolIcon name="play" tone="primary" size={14} />
+                  )}
                 </button>
                 <button
+                  type="button"
                   onClick={() => handleDelete(existingDiscord.id)}
                   disabled={deleting === existingDiscord.id}
                   title="Delete webhook"
-                  className="p-1.5 rounded transition-colors hover:text-red-400 disabled:opacity-40"
-                  style={{ color: "#6e7681" }}
+                  className="p-1.5 rounded transition-opacity hover:opacity-80 disabled:opacity-40"
                 >
-                  {deleting === existingDiscord.id
-                    ? <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                    : <Trash2 className="h-3.5 w-3.5" />
-                  }
+                  {deleting === existingDiscord.id ? (
+                    <div className="h-3.5 w-3.5 rounded-full border-2 border-t-transparent animate-spin ag-spinner" />
+                  ) : (
+                    <CoolIcon name="trash" tone="danger" size={14} />
+                  )}
                 </button>
               </div>
             </div>
 
-            {/* Feedback messages */}
             {deleteError && (
-              <p className="mt-2 text-xs flex items-center gap-1.5" style={{ color: "#f85149" }}>
-                <AlertCircle className="h-3.5 w-3.5 shrink-0" /> {deleteError}
+              <p className="mt-2 ag-text-body flex items-center gap-1.5" style={{ color: "var(--ag-danger)" }}>
+                <CoolIcon name="warning" tone="danger" size={14} />
+                {deleteError}
               </p>
             )}
             {testResult && (
-              <p className="mt-2 text-xs flex items-center gap-1.5"
-                 style={{ color: testResult.ok ? "#3fb950" : "#f85149" }}>
-                {testResult.ok
-                  ? <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-                  : <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                }
+              <p
+                className="mt-2 ag-text-body flex items-center gap-1.5"
+                style={{ color: testResult.ok ? "var(--ag-safe)" : "var(--ag-danger)" }}
+              >
+                <CoolIcon
+                  name={testResult.ok ? "shield-check" : "warning"}
+                  tone={testResult.ok ? "safe" : "danger"}
+                  size={14}
+                />
                 {testResult.msg}
               </p>
             )}
           </div>
         )}
 
-        {/* Add / Update form */}
         <form onSubmit={handleSave} className="px-5 py-4 space-y-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#6e7681" }}>
-            {existingDiscord ? "Update Webhook" : "Add Webhook"}
-          </p>
+          <p className="ag-text-label">{existingDiscord ? "Update webhook" : "Add webhook"}</p>
 
           <div className="space-y-1.5">
-            <label className="text-xs" style={{ color: "#8b949e" }}>Webhook URL</label>
+            <label className="ag-text-meta">Webhook URL</label>
             <input
               required
               type="url"
               value={webhookUrl}
               onChange={(e) => setWebhookUrl(e.target.value)}
               placeholder="https://discord.com/api/webhooks/…"
-              className="w-full rounded-lg px-3 py-2 text-sm text-white outline-none"
-              style={{ background: "#0d1117", border: "1px solid #30363d" }}
+              className="w-full rounded-lg px-3 py-2 ag-text-nav text-white outline-none ag-input focus:ring-1 focus:ring-[var(--ag-cyan)]"
             />
-            <p className="text-[10px]" style={{ color: "#6e7681" }}>
-              In Discord: channel settings → Integrations → Webhooks → Copy Webhook URL
+            <p className="ag-text-body">
+              Discord: channel settings → Integrations → Webhooks → Copy URL.{" "}
               <a
                 href="https://support.discord.com/hc/en-us/articles/228383668"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="ml-1 inline-flex items-center gap-0.5 hover:text-indigo-400"
-                style={{ color: "#818cf8" }}
+                className="ag-text-link inline-flex items-center gap-0.5"
               >
-                Guide <ExternalLink className="h-2.5 w-2.5" />
+                Guide
+                <CoolIcon name="chevron-down" tone="primary" size={12} className="rotate-[-90deg]" />
               </a>
             </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs" style={{ color: "#8b949e" }}>Minimum Severity</label>
+              <label className="ag-text-meta">Minimum severity</label>
               <select
                 value={minSeverity}
                 onChange={(e) => setMinSeverity(e.target.value)}
-                className="w-full rounded-lg px-3 py-2 text-sm text-white outline-none"
-                style={{ background: "#0d1117", border: "1px solid #30363d" }}
+                className="w-full rounded-lg px-3 py-2 ag-text-nav text-white outline-none ag-input"
               >
                 {SEVERITY_OPTIONS.map((s) => (
-                  <option key={s} value={s}>{s}</option>
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
                 ))}
               </select>
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs" style={{ color: "#8b949e" }}>Status</label>
+              <label className="ag-text-meta">Status</label>
               <select
                 value={enabled ? "true" : "false"}
                 onChange={(e) => setEnabled(e.target.value === "true")}
-                className="w-full rounded-lg px-3 py-2 text-sm text-white outline-none"
-                style={{ background: "#0d1117", border: "1px solid #30363d" }}
+                className="w-full rounded-lg px-3 py-2 ag-text-nav text-white outline-none ag-input"
               >
                 <option value="true">Enabled</option>
                 <option value="false">Disabled</option>
@@ -355,30 +358,30 @@ export default function SettingsPage() {
           </div>
 
           {saveError && (
-            <p className="text-xs flex items-center gap-1.5" style={{ color: "#f85149" }}>
-              <AlertCircle className="h-3.5 w-3.5 shrink-0" /> {saveError}
+            <p className="ag-text-body flex items-center gap-1.5" style={{ color: "var(--ag-danger)" }}>
+              <CoolIcon name="warning" tone="danger" size={14} />
+              {saveError}
             </p>
           )}
           {saveOk && (
-            <p className="text-xs flex items-center gap-1.5" style={{ color: "#3fb950" }}>
-              <CheckCircle2 className="h-3.5 w-3.5 shrink-0" /> Webhook saved successfully
+            <p className="ag-text-body flex items-center gap-1.5" style={{ color: "var(--ag-safe)" }}>
+              <CoolIcon name="shield-check" tone="safe" size={14} />
+              Webhook saved successfully
             </p>
           )}
 
-          <button
-            type="submit"
-            disabled={saving || !webhookUrl}
-            className="flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg text-white transition-opacity hover:opacity-90 disabled:opacity-40"
-            style={{ background: "#6366f1" }}
-          >
+          <button type="submit" disabled={saving || !webhookUrl} className="ag-btn-primary">
             {saving ? (
-              <RefreshCw className="h-4 w-4 animate-spin" />
-            ) : existingDiscord ? (
-              <Save className="h-4 w-4" />
+              <div className="h-4 w-4 rounded-full border-2 border-t-transparent animate-spin border-[#0a0c10]" />
             ) : (
-              <Plus className="h-4 w-4" />
+              <CoolIcon
+                name={existingDiscord ? "shield-check" : "plus"}
+                tone="default"
+                size={16}
+                className="!text-[#0a0c10]"
+              />
             )}
-            {saving ? "Saving…" : existingDiscord ? "Update Webhook" : "Add Webhook"}
+            {saving ? "Saving…" : existingDiscord ? "Update webhook" : "Add webhook"}
           </button>
         </form>
       </section>

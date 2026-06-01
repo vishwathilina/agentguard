@@ -3,104 +3,120 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import {
-  LayoutDashboard,
-  ScanLine,
-  Brain,
-  Bell,
-  Server,
-  Settings,
-  LogOut,
-  ShieldCheck,
-} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { CoolIcon, type CoolIconName } from "@/components/icons/CoolIcon";
+import { Logo } from "@/components/layout/Logo";
 
-const navItems = [
-  { href: "/dashboard",     label: "Dashboard",      icon: LayoutDashboard },
-  { href: "/scans",         label: "Scans",           icon: ScanLine },
-  { href: "/repositories",  label: "Repositories",    icon: Server },
-  { href: "/ai-insights",   label: "AI Insights",     icon: Brain },
-  { href: "/alerts",        label: "Alerts",          icon: Bell },
-  { href: "/settings",      label: "Settings",        icon: Settings },
+type NavItem = { href: string; label: string; icon: CoolIconName };
+
+const NAV_WORKSPACE: NavItem[] = [
+  { href: "/dashboard", label: "Overview", icon: "chart-line" },
 ];
+
+const NAV_MANAGE: NavItem[] = [
+  { href: "/scans",        label: "Findings",       icon: "shield-warning" },
+  { href: "/repositories", label: "Infrastructure", icon: "folder" },
+  { href: "/ai-insights",  label: "Intelligence",   icon: "data" },
+  { href: "/alerts",       label: "Alerts",         icon: "bell" },
+  { href: "/settings",     label: "Settings",       icon: "settings" },
+];
+
+function NavLink({
+  href,
+  label,
+  icon,
+  active,
+  badge,
+}: NavItem & { active: boolean; badge?: string }) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "flex items-center gap-3 px-3 py-3 rounded-lg ag-text-nav transition-all duration-150",
+        active
+          ? "ag-nav-active font-medium text-white"
+          : "text-[var(--ag-text-muted)] hover:text-white font-medium border-l-2 border-transparent"
+      )}
+    >
+      <CoolIcon name={icon} tone={active ? "primary" : "muted"} size={18} />
+      <span>{label}</span>
+      {badge && (
+        <span
+          className="ml-auto font-semibold px-1.5 py-0.5 rounded-full"
+          style={{
+            fontSize: "var(--ag-text-label)",
+            background: "color-mix(in srgb, var(--ag-danger) 18%, transparent)",
+            color: "var(--ag-danger)",
+            border: "1px solid color-mix(in srgb, var(--ag-danger) 35%, transparent)",
+          }}
+        >
+          {badge}
+        </span>
+      )}
+    </Link>
+  );
+}
 
 export function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
 
-  return (
-    <aside className="w-60 flex flex-col h-screen sticky top-0 shrink-0"
-      style={{ background: "#161b22", borderRight: "1px solid #30363d" }}>
+  const isActive = (href: string) =>
+    pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
 
-      {/* Logo */}
-      <div className="px-5 py-5 flex items-center gap-3" style={{ borderBottom: "1px solid #30363d" }}>
-        <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0"
-          style={{ background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #06b6d4 100%)" }}>
-          <ShieldCheck className="h-5 w-5 text-white" />
-        </div>
+  return (
+    <aside className="w-60 flex flex-col h-screen sticky top-0 shrink-0 ag-card rounded-none border-y-0 border-l-0">
+      <div className="px-5 py-5 flex items-center gap-3 border-b border-[var(--ag-border)]">
+        <Logo size="sm" href="/dashboard" priority />
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-white leading-none">AgentGuard</p>
-          <p className="text-[10px] mt-0.5" style={{ color: "#8b949e" }}>AI DevSecOps Scanner</p>
+          <p className="ag-text-brand leading-none">AgentGuard</p>
+          <p className="ag-text-meta mt-1">DevSecOps platform</p>
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5">
-        {navItems.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",
-                active
-                  ? "text-white"
-                  : "hover:text-white"
-              )}
-              style={
-                active
-                  ? { background: "rgba(99,102,241,0.18)", color: "#fff", borderLeft: "2px solid #6366f1" }
-                  : { color: "#8b949e", borderLeft: "2px solid transparent" }
-              }
-            >
-              <Icon className="h-4 w-4 shrink-0" />
-              <span>{label}</span>
-              {label === "Alerts" && (
-                <span className="ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
-                  style={{ background: "rgba(239,68,68,0.2)", color: "#f87171" }}>
-                  3
-                </span>
-              )}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto">
+        <p className="ag-sidebar-group">Workspace</p>
+        {NAV_WORKSPACE.map((item) => (
+          <NavLink key={item.href} {...item} active={isActive(item.href)} />
+        ))}
+
+        <p className="ag-sidebar-group mt-4">Manage</p>
+        {NAV_MANAGE.map((item) => (
+          <NavLink
+            key={item.href}
+            {...item}
+            active={isActive(item.href)}
+            badge={item.label === "Alerts" ? "3" : undefined}
+          />
+        ))}
       </nav>
 
-      {/* User */}
       {session?.user && (
-        <div className="px-3 py-4" style={{ borderTop: "1px solid #30363d" }}>
-          <div className="flex items-center gap-3 px-2 py-2 rounded-lg"
-            style={{ background: "rgba(255,255,255,0.03)" }}>
+        <div className="px-3 py-4 border-t border-[var(--ag-border)]">
+          <div
+            className="flex items-center gap-3 px-2 py-2 rounded-lg"
+            style={{ background: "color-mix(in srgb, var(--ag-text) 4%, transparent)" }}
+          >
             <Avatar className="h-8 w-8 shrink-0">
               <AvatarImage src={session.user.image ?? ""} />
-              <AvatarFallback className="text-xs font-semibold"
-                style={{ background: "#6366f1", color: "#fff" }}>
+              <AvatarFallback
+                className="font-semibold text-[#0a0c10]"
+                style={{ fontSize: "var(--ag-text-nav)", background: "var(--ag-cyan)" }}
+              >
                 {session.user.name?.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-white truncate">{session.user.name}</p>
-              <p className="text-[10px] truncate" style={{ color: "#8b949e" }}>{session.user.email}</p>
+              <p className="ag-text-nav font-semibold text-white truncate">{session.user.name}</p>
+              <p className="ag-text-meta truncate">{session.user.email}</p>
             </div>
             <button
               onClick={() => signOut({ callbackUrl: "/" })}
-              className="shrink-0 transition-colors hover:text-red-400"
-              style={{ color: "#8b949e" }}
+              className="shrink-0 transition-colors hover:opacity-80"
               title="Sign out"
             >
-              <LogOut className="h-3.5 w-3.5" />
+              <CoolIcon name="log-out" tone="muted" size={15} className="hover:!text-[var(--ag-danger)]" />
             </button>
           </div>
         </div>

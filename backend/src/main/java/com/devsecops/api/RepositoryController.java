@@ -84,10 +84,9 @@ public class RepositoryController {
         Repository repo = repoOpt.get();
 
         if (repo.getTargetType() != TargetType.GIT_REPO) {
-            // Docker image → only Trivy applies
             return ResponseEntity.ok(new DetectTechResponse(
-                    List.of(),
-                    List.of("TRIVY")));
+                    List.of("DOCKER"),
+                    List.of("TRIVY", "GRYPE", "DOCKLE")));
         }
 
         Path tmpDir = null;
@@ -126,14 +125,29 @@ public class RepositoryController {
 
     private List<String> recommendTools(Set<TechStack> stacks) {
         List<String> tools = new ArrayList<>();
-        tools.add("GITLEAKS");                                  // always for git repos
-        if (stacks.contains(TechStack.DOCKER))           tools.add("TRIVY");
+        tools.add("GITLEAKS");
+        tools.add("SEMGREP");
+        if (stacks.contains(TechStack.DOCKER)) {
+            tools.add("TRIVY");
+            tools.add("GRYPE");
+            tools.add("HADOLINT");
+        }
         if (stacks.contains(TechStack.NODE_JS))          tools.add("NPM_AUDIT");
-        if (stacks.contains(TechStack.TERRAFORM))        tools.add("TFSEC");
-        if (stacks.contains(TechStack.KUBERNETES))       tools.add("KUBE_BENCH");
+        if (stacks.contains(TechStack.PYTHON))           tools.add("BANDIT");
+        if (stacks.contains(TechStack.NODE_JS)
+         || stacks.contains(TechStack.PYTHON)
+         || stacks.contains(TechStack.GO))               tools.add("OSV_SCANNER");
+        if (stacks.contains(TechStack.TERRAFORM)) {
+            tools.add("TFSEC");
+            tools.add("CHECKOV");
+        }
+        if (stacks.contains(TechStack.KUBERNETES)) {
+            tools.add("KUBE_BENCH");
+            tools.add("CHECKOV");
+        }
         if (stacks.contains(TechStack.SPRING_BOOT)
-         || stacks.contains(TechStack.GRADLE_JAVA))      tools.add("OWASP_DEPENDENCY_CHECK");
-        return tools;
+         || stacks.contains(TechStack.GRADLE_JAVA))      tools.add("OWASP_DEP_CHECK");
+        return tools.stream().distinct().toList();
     }
 
     private void deleteDir(Path dir) {

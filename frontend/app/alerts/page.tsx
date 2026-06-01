@@ -3,16 +3,17 @@
 import { useEffect, useState } from "react";
 import { scansApi } from "@/lib/api";
 import { Scan } from "@/types";
-import { Bell, AlertCircle, Flame, AlertTriangle, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { CoolIcon, type CoolIconName, type IconTone } from "@/components/icons/CoolIcon";
 
 function timeAgo(dateStr?: string | null): string {
   if (!dateStr) return "—";
   const diff = Date.now() - new Date(dateStr).getTime();
   const m = Math.floor(diff / 60000);
-  if (m < 1)    return "just now";
-  if (m < 60)   return `${m}m ago`;
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
   if (m < 1440) return `${Math.floor(m / 60)}h ago`;
   return `${Math.floor(m / 1440)}d ago`;
 }
@@ -26,10 +27,31 @@ type AlertItem = {
   time: string;
 };
 
-const SEVERITY_STYLE = {
-  CRITICAL: { color: "#f85149", bg: "rgba(248,81,73,0.10)", border: "rgba(248,81,73,0.25)", icon: AlertCircle },
-  HIGH:     { color: "#e3b341", bg: "rgba(227,179,65,0.10)", border: "rgba(227,179,65,0.25)", icon: Flame },
-  MEDIUM:   { color: "#d29922", bg: "rgba(210,153,34,0.08)", border: "rgba(210,153,34,0.20)", icon: AlertTriangle },
+const SEVERITY_META: Record<
+  string,
+  { color: string; bg: string; border: string; icon: CoolIconName; tone: IconTone }
+> = {
+  CRITICAL: {
+    color: "var(--ag-danger)",
+    bg: "color-mix(in srgb, var(--ag-danger) 10%, transparent)",
+    border: "color-mix(in srgb, var(--ag-danger) 25%, transparent)",
+    icon: "warning",
+    tone: "danger",
+  },
+  HIGH: {
+    color: "var(--ag-warning)",
+    bg: "color-mix(in srgb, var(--ag-warning) 10%, transparent)",
+    border: "color-mix(in srgb, var(--ag-warning) 25%, transparent)",
+    icon: "shield-warning",
+    tone: "warning",
+  },
+  MEDIUM: {
+    color: "var(--ag-orange)",
+    bg: "color-mix(in srgb, var(--ag-orange) 8%, transparent)",
+    border: "color-mix(in srgb, var(--ag-orange) 20%, transparent)",
+    icon: "warning",
+    tone: "coral",
+  },
 };
 
 export default function AlertsPage() {
@@ -78,91 +100,82 @@ export default function AlertsPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-5">
-      {/* Header */}
-      <div className="flex items-center gap-3 pb-1">
-        <div
-          className="h-8 w-8 rounded-lg flex items-center justify-center"
-          style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.25)" }}
-        >
-          <Bell className="h-4 w-4" style={{ color: "#f87171" }} />
-        </div>
-        <div>
-          <h1 className="text-base font-semibold text-white leading-none">Alerts</h1>
-          <p className="text-[11px] mt-0.5" style={{ color: "#8b949e" }}>
-            Security notifications from completed scans
-          </p>
-        </div>
-        {alerts.length > 0 && (
-          <span
-            className="ml-auto text-xs font-semibold px-2.5 py-1 rounded-full"
-            style={{ background: "rgba(248,81,73,0.12)", color: "#f85149", border: "1px solid rgba(248,81,73,0.25)" }}
-          >
-            {alerts.length} active
-          </span>
-        )}
-      </div>
+      <PageHeader
+        icon="bell"
+        tone="warning"
+        title="Alerts"
+        subtitle="Security notifications from completed scans"
+        trailing={
+          alerts.length > 0 ? (
+            <span
+              className="ml-2 font-semibold px-2.5 py-1 rounded-full shrink-0"
+              style={{
+                fontSize: "var(--ag-text-label)",
+                background: "color-mix(in srgb, var(--ag-danger) 12%, transparent)",
+                color: "var(--ag-danger)",
+                border: "1px solid color-mix(in srgb, var(--ag-danger) 28%, transparent)",
+              }}
+            >
+              {alerts.length} active
+            </span>
+          ) : undefined
+        }
+      />
 
-      {/* Alerts list */}
       {loading ? (
         <div className="flex justify-center py-16">
-          <div
-            className="h-8 w-8 rounded-full border-2 animate-spin"
-            style={{ borderColor: "#6366f1", borderTopColor: "transparent" }}
-          />
+          <div className="h-8 w-8 rounded-full border-2 animate-spin ag-spinner" />
         </div>
       ) : alerts.length === 0 ? (
-        <div
-          className="rounded-xl p-16 text-center space-y-3"
-          style={{ background: "#161b22", border: "1px solid #30363d" }}
-        >
+        <div className="ag-card p-16 text-center space-y-3">
           <div
             className="h-12 w-12 rounded-xl flex items-center justify-center mx-auto"
-            style={{ background: "rgba(63,185,80,0.12)", border: "1px solid rgba(63,185,80,0.25)" }}
+            style={{
+              background: "color-mix(in srgb, var(--ag-safe) 12%, transparent)",
+              border: "1px solid color-mix(in srgb, var(--ag-safe) 28%, transparent)",
+            }}
           >
-            <Bell className="h-6 w-6" style={{ color: "#3fb950" }} />
+            <CoolIcon name="shield-check" tone="safe" size={24} />
           </div>
-          <p className="font-medium" style={{ color: "#c9d1d9" }}>No active alerts</p>
-          <p className="text-xs" style={{ color: "#6e7681" }}>
+          <p className="ag-text-title">No active alerts</p>
+          <p className="ag-text-body">
             All scanned targets are clean or no scans have been completed yet.
           </p>
         </div>
       ) : (
         <div className="space-y-3">
           {alerts.map((alert, i) => {
-            const s = SEVERITY_STYLE[alert.severity];
-            const Icon = s.icon;
+            const meta = SEVERITY_META[alert.severity];
             return (
-              <Link
-                key={i}
-                href={`/scans/${alert.scanId}`}
-                className="block group"
-              >
-                <div
-                  className="rounded-xl p-4 flex items-start gap-4 transition-opacity group-hover:opacity-80"
-                  style={{ background: "#161b22", border: "1px solid #30363d" }}
-                >
+              <Link key={i} href={`/scans/${alert.scanId}`} className="block group">
+                <div className="ag-card p-4 flex items-start gap-4 transition-opacity group-hover:opacity-90">
                   <div
                     className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
-                    style={{ background: s.bg, border: `1px solid ${s.border}` }}
+                    style={{ background: meta.bg, border: `1px solid ${meta.border}` }}
                   >
-                    <Icon className="h-4 w-4" style={{ color: s.color }} />
+                    <CoolIcon name={meta.icon} tone={meta.tone} size={16} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span
-                        className="text-[10px] font-bold px-1.5 py-0.5 rounded"
-                        style={{ background: s.bg, color: s.color }}
+                        className="ag-text-label px-1.5 py-0.5 rounded"
+                        style={{ background: meta.bg, color: meta.color }}
                       >
                         {alert.severity}
                       </span>
-                      <span className="text-sm font-medium text-white">{alert.title}</span>
+                      <span className="ag-text-title font-medium">{alert.title}</span>
                     </div>
-                    <p className="text-xs mt-1" style={{ color: "#8b949e" }}>{alert.detail}</p>
-                    <p className="text-[10px] mt-1" style={{ color: "#6e7681" }}>
+                    <p className="ag-text-meta mt-1">{alert.detail}</p>
+                    <p className="ag-text-meta mt-1">
                       {alert.repoName} · {alert.time}
                     </p>
                   </div>
-                  <ExternalLink className="h-4 w-4 shrink-0 mt-1 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: "#6e7681" }} />
+                  <CoolIcon
+                    name="chevron-down"
+                    tone="muted"
+                    size={16}
+                    className="shrink-0 mt-1 opacity-0 group-hover:opacity-100 transition-opacity rotate-[-90deg]"
+                  />
                 </div>
               </Link>
             );

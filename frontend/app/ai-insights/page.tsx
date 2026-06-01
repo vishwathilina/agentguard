@@ -3,26 +3,52 @@
 import { useEffect, useState } from "react";
 import { scansApi } from "@/lib/api";
 import { Scan } from "@/types";
-import {
-  Brain, AlertCircle, Flame, AlertTriangle,
-  ArrowRight, ShieldCheck, TrendingUp,
-} from "lucide-react";
 import Link from "next/link";
 import { formatDate, scoreColor } from "@/lib/utils";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { CoolIcon, type CoolIconName, type IconTone } from "@/components/icons/CoolIcon";
 
-const SEV_STYLE = {
-  CRITICAL: { color: "#f85149", bg: "rgba(248,81,73,0.10)", icon: AlertCircle },
-  HIGH:     { color: "#e3b341", bg: "rgba(227,179,65,0.10)", icon: Flame },
-  MEDIUM:   { color: "#d29922", bg: "rgba(210,153,34,0.08)", icon: AlertTriangle },
-  LOW:      { color: "#3fb950", bg: "rgba(63,185,80,0.08)",  icon: ShieldCheck },
-  CLEAN:    { color: "#3fb950", bg: "rgba(63,185,80,0.08)",  icon: ShieldCheck },
+const SEV_META: Record<
+  string,
+  { color: string; bg: string; icon: CoolIconName; tone: IconTone }
+> = {
+  CRITICAL: {
+    color: "var(--ag-danger)",
+    bg: "color-mix(in srgb, var(--ag-danger) 10%, transparent)",
+    icon: "warning",
+    tone: "danger",
+  },
+  HIGH: {
+    color: "var(--ag-warning)",
+    bg: "color-mix(in srgb, var(--ag-warning) 10%, transparent)",
+    icon: "shield-warning",
+    tone: "warning",
+  },
+  MEDIUM: {
+    color: "var(--ag-orange)",
+    bg: "color-mix(in srgb, var(--ag-orange) 8%, transparent)",
+    icon: "warning",
+    tone: "coral",
+  },
+  LOW: {
+    color: "var(--ag-safe)",
+    bg: "color-mix(in srgb, var(--ag-safe) 8%, transparent)",
+    icon: "shield-check",
+    tone: "safe",
+  },
+  CLEAN: {
+    color: "var(--ag-safe)",
+    bg: "color-mix(in srgb, var(--ag-safe) 8%, transparent)",
+    icon: "shield-check",
+    tone: "safe",
+  },
 };
 
 function topSeverityKey(scan: Scan) {
   if (scan.totalCritical > 0) return "CRITICAL";
-  if (scan.totalHigh > 0)     return "HIGH";
-  if (scan.totalMedium > 0)   return "MEDIUM";
-  if (scan.totalLow > 0)      return "LOW";
+  if (scan.totalHigh > 0) return "HIGH";
+  if (scan.totalMedium > 0) return "MEDIUM";
+  if (scan.totalLow > 0) return "LOW";
   return "CLEAN";
 }
 
@@ -34,180 +60,158 @@ export default function AiInsightsPage() {
     scansApi.list(0).then((r) => setScans(r.content)).catch(console.error).finally(() => setLoading(false));
   }, []);
 
-  const completed   = scans.filter((s) => s.status === "COMPLETED");
-  const failed      = scans.filter((s) => s.status === "FAILED");
-  const inProgress  = scans.filter((s) => s.status === "RUNNING" || s.status === "QUEUED");
-  const withIssues  = completed.filter((s) => s.totalCritical + s.totalHigh + s.totalMedium + s.totalLow > 0);
-  const clean       = completed.filter((s) => s.totalCritical + s.totalHigh + s.totalMedium + s.totalLow === 0);
+  const completed = scans.filter((s) => s.status === "COMPLETED");
+  const failed = scans.filter((s) => s.status === "FAILED");
+  const inProgress = scans.filter((s) => s.status === "RUNNING" || s.status === "QUEUED");
+  const withIssues = completed.filter((s) => s.totalCritical + s.totalHigh + s.totalMedium + s.totalLow > 0);
+  const clean = completed.filter((s) => s.totalCritical + s.totalHigh + s.totalMedium + s.totalLow === 0);
   const totalCritical = completed.reduce((a, s) => a + s.totalCritical, 0);
-  const totalHigh     = completed.reduce((a, s) => a + s.totalHigh, 0);
+  const totalHigh = completed.reduce((a, s) => a + s.totalHigh, 0);
+
+  const stats = [
+    { label: "Completed", value: completed.length, color: "var(--ag-cyan)" },
+    { label: "Critical issues", value: totalCritical, color: "var(--ag-danger)" },
+    { label: "High issues", value: totalHigh, color: "var(--ag-warning)" },
+    { label: "Clean scans", value: clean.length, color: "var(--ag-safe)" },
+  ];
 
   return (
     <div className="max-w-4xl mx-auto space-y-5">
-      {/* Header */}
-      <div className="flex items-center gap-3 pb-1">
-        <div
-          className="h-8 w-8 rounded-lg flex items-center justify-center"
-          style={{ background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)" }}
-        >
-          <Brain className="h-4 w-4" style={{ color: "#818cf8" }} />
-        </div>
-        <div>
-          <h1 className="text-base font-semibold text-white leading-none">AI Insights</h1>
-          <p className="text-[11px] mt-0.5" style={{ color: "#8b949e" }}>
-            Risk analysis and prioritized findings across all scans
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        icon="data"
+        tone="primary"
+        title="Intelligence"
+        subtitle="Risk analysis and prioritized findings across all scans"
+      />
 
       {loading ? (
         <div className="flex justify-center py-16">
-          <div
-            className="h-8 w-8 rounded-full border-2 animate-spin"
-            style={{ borderColor: "#6366f1", borderTopColor: "transparent" }}
-          />
+          <div className="h-8 w-8 rounded-full border-2 animate-spin ag-spinner" />
         </div>
       ) : scans.length === 0 ? (
-        <div
-          className="rounded-xl p-16 text-center space-y-3"
-          style={{ background: "#161b22", border: "1px solid #30363d" }}
-        >
-          <Brain className="h-10 w-10 mx-auto" style={{ color: "#484f58" }} />
-          <p className="font-medium" style={{ color: "#c9d1d9" }}>No scans yet</p>
-          <p className="text-xs" style={{ color: "#6e7681" }}>
-            Go to Repositories to add a target and run your first scan.
+        <div className="ag-card p-16 text-center space-y-3">
+          <CoolIcon name="data" tone="muted" size={40} className="mx-auto opacity-40" />
+          <p className="ag-text-title">No scans yet</p>
+          <p className="ag-text-body">
+            Go to Infrastructure to add a target and run your first scan.
           </p>
-          <Link
-            href="/repositories"
-            className="inline-flex items-center gap-2 text-xs font-medium px-4 py-2 rounded-lg text-white mt-2"
-            style={{ background: "#6366f1" }}
-          >
-            Add Repository <ArrowRight className="h-3.5 w-3.5" />
+          <Link href="/repositories" className="ag-btn-primary inline-flex mt-2">
+            Add target
+            <CoolIcon name="chevron-down" tone="default" size={14} className="rotate-[-90deg] !text-[#0a0c10]" />
           </Link>
         </div>
       ) : (
         <>
-          {/* Summary stats */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {[
-              { label: "Completed",      value: completed.length,  color: "#58a6ff", bg: "rgba(88,166,255,0.10)" },
-              { label: "Critical Issues",value: totalCritical,     color: "#f85149", bg: "rgba(248,81,73,0.10)" },
-              { label: "High Issues",    value: totalHigh,         color: "#e3b341", bg: "rgba(227,179,65,0.10)" },
-              { label: "Clean Scans",    value: clean.length,      color: "#3fb950", bg: "rgba(63,185,80,0.10)" },
-            ].map(({ label, value, color, bg }) => (
-              <div
-                key={label}
-                className="rounded-xl p-4"
-                style={{ background: "#161b22", border: "1px solid #30363d" }}
-              >
-                <p className="text-2xl font-bold font-mono tabular-nums" style={{ color }}>{value}</p>
-                <p className="text-xs mt-1" style={{ color: "#8b949e" }}>{label}</p>
+            {stats.map(({ label, value, color }) => (
+              <div key={label} className="ag-stat-card">
+                <p className="ag-text-metric-lg" style={{ color }}>{value}</p>
+                <p className="ag-text-meta mt-1">{label}</p>
               </div>
             ))}
           </div>
 
-          {/* In-progress */}
           {inProgress.length > 0 && (
             <div
-              className="rounded-xl px-4 py-3 flex items-center gap-3"
-              style={{ background: "rgba(88,166,255,0.06)", border: "1px solid rgba(88,166,255,0.2)" }}
+              className="ag-card px-4 py-3 flex items-center gap-3"
+              style={{
+                background: "color-mix(in srgb, var(--ag-cyan) 6%, transparent)",
+                borderColor: "color-mix(in srgb, var(--ag-cyan) 25%, transparent)",
+              }}
             >
-              <div
+              <span
                 className="h-2 w-2 rounded-full animate-pulse shrink-0"
-                style={{ background: "#58a6ff" }}
+                style={{ background: "var(--ag-cyan)" }}
               />
-              <p className="text-sm" style={{ color: "#58a6ff" }}>
-                {inProgress.length} scan{inProgress.length > 1 ? "s" : ""} currently in progress
+              <p className="ag-text-nav" style={{ color: "var(--ag-cyan)" }}>
+                {inProgress.length} scan{inProgress.length > 1 ? "s" : ""} in progress
               </p>
             </div>
           )}
 
-          {/* All completed scans */}
           {completed.length === 0 ? (
-            <div
-              className="rounded-xl p-8 text-center"
-              style={{ background: "#161b22", border: "1px solid #30363d", color: "#6e7681" }}
-            >
+            <div className="ag-card p-8 text-center ag-text-body">
               {failed.length > 0
-                ? `${failed.length} scan(s) failed. Check Scan Log for errors and retry.`
-                : "No completed scans yet. Scans in progress will appear here once finished."}
+                ? `${failed.length} scan(s) failed. Check findings for errors and retry.`
+                : "No completed scans yet."}
             </div>
           ) : (
-            <div
-              className="rounded-xl overflow-hidden"
-              style={{ background: "#161b22", border: "1px solid #30363d" }}
-            >
-              <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid #30363d" }}>
+            <div className="ag-card overflow-hidden p-0">
+              <div
+                className="px-5 py-4 flex items-center justify-between border-b ag-divider"
+              >
                 <div>
-                  <h2 className="text-sm font-semibold text-white">Scan Results</h2>
-                  <p className="text-[10px] mt-0.5" style={{ color: "#8b949e" }}>
+                  <h2 className="ag-text-section">Scan results</h2>
+                  <p className="ag-text-meta mt-1">
                     {withIssues.length} with findings · {clean.length} clean
                   </p>
                 </div>
-                <TrendingUp className="h-4 w-4" style={{ color: "#6e7681" }} />
+                <CoolIcon name="trending-up" tone="muted" size={18} />
               </div>
 
-              <div className="divide-y" style={{ borderColor: "#21262d" }}>
+              <div className="divide-y ag-divider">
                 {completed.map((scan) => {
-                  const name    = scan.repository.githubRepoFullName ?? scan.repository.dockerImage ?? "—";
-                  const sevKey  = topSeverityKey(scan);
-                  const s       = SEV_STYLE[sevKey as keyof typeof SEV_STYLE];
-                  const Icon    = s.icon;
-                  const total   = scan.totalCritical + scan.totalHigh + scan.totalMedium + scan.totalLow;
+                  const name = scan.repository.githubRepoFullName ?? scan.repository.dockerImage ?? "—";
+                  const sevKey = topSeverityKey(scan);
+                  const meta = SEV_META[sevKey];
+                  const total =
+                    scan.totalCritical + scan.totalHigh + scan.totalMedium + scan.totalLow;
 
                   return (
                     <Link
                       key={scan.id}
                       href={`/scans/${scan.id}`}
-                      className="flex items-center gap-4 px-5 py-3.5 group transition-colors"
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "#0d1117")}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                      className="flex items-center gap-4 px-5 py-3.5 group transition-colors hover:bg-[var(--ag-bg)]"
                     >
                       <div
                         className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0"
-                        style={{ background: s.bg }}
+                        style={{ background: meta.bg }}
                       >
-                        <Icon className="h-4 w-4" style={{ color: s.color }} />
+                        <CoolIcon name={meta.icon} tone={meta.tone} size={16} />
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-white truncate">{name}</p>
-                        <p className="text-xs mt-0.5" style={{ color: "#6e7681" }}>
+                        <p className="ag-text-title truncate">{name}</p>
+                        <p className="ag-text-meta mt-0.5">
                           {formatDate(scan.completedAt)}
                           {scan.branch && ` · ${scan.branch}`}
                         </p>
                       </div>
 
-                      {/* Score */}
                       {scan.securityScore !== null && (
-                        <span className={`text-sm font-bold font-mono shrink-0 ${scoreColor(scan.securityScore)}`}>
-                          {scan.securityScore}/100
+                        <span className={`ag-text-nav font-bold shrink-0 ${scoreColor(scan.securityScore)}`}>
+                          {scan.securityScore}
+                          <span className="ag-text-metric-denom font-normal">/100</span>
                         </span>
                       )}
 
-                      {/* Findings */}
-                      <div className="flex items-center gap-2 shrink-0 min-w-[80px] justify-end">
+                      <div className="flex items-center gap-2 shrink-0 min-w-[80px] justify-end ag-text-meta font-semibold">
                         {total === 0 ? (
-                          <span className="text-xs" style={{ color: "#3fb950" }}>Clean</span>
+                          <span style={{ color: "var(--ag-safe)" }}>Clean</span>
                         ) : (
                           <>
                             {scan.totalCritical > 0 && (
-                              <span className="text-xs font-semibold" style={{ color: "#f85149" }}>{scan.totalCritical}C</span>
+                              <span style={{ color: "var(--ag-danger)" }}>{scan.totalCritical}C</span>
                             )}
                             {scan.totalHigh > 0 && (
-                              <span className="text-xs font-semibold" style={{ color: "#e3b341" }}>{scan.totalHigh}H</span>
+                              <span style={{ color: "var(--ag-warning)" }}>{scan.totalHigh}H</span>
                             )}
                             {scan.totalMedium > 0 && (
-                              <span className="text-xs font-semibold" style={{ color: "#d29922" }}>{scan.totalMedium}M</span>
+                              <span style={{ color: "var(--ag-orange)" }}>{scan.totalMedium}M</span>
                             )}
                             {scan.totalLow > 0 && (
-                              <span className="text-xs font-semibold" style={{ color: "#3fb950" }}>{scan.totalLow}L</span>
+                              <span style={{ color: "var(--ag-safe)" }}>{scan.totalLow}L</span>
                             )}
                           </>
                         )}
                       </div>
 
-                      <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" style={{ color: "#6e7681" }} />
+                      <CoolIcon
+                        name="chevron-down"
+                        tone="muted"
+                        size={16}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity rotate-[-90deg] shrink-0"
+                      />
                     </Link>
                   );
                 })}
@@ -215,16 +219,20 @@ export default function AiInsightsPage() {
             </div>
           )}
 
-          {/* Failed scans callout */}
           {failed.length > 0 && (
             <div
-              className="rounded-xl px-4 py-3 flex items-center gap-3"
-              style={{ background: "rgba(248,81,73,0.06)", border: "1px solid rgba(248,81,73,0.2)" }}
+              className="ag-card px-4 py-3 flex items-center gap-3"
+              style={{
+                background: "color-mix(in srgb, var(--ag-danger) 6%, transparent)",
+                borderColor: "color-mix(in srgb, var(--ag-danger) 22%, transparent)",
+              }}
             >
-              <AlertCircle className="h-4 w-4 shrink-0" style={{ color: "#f85149" }} />
-              <p className="text-sm" style={{ color: "#f85149" }}>
+              <CoolIcon name="warning" tone="danger" size={16} />
+              <p className="ag-text-nav" style={{ color: "var(--ag-danger)" }}>
                 {failed.length} scan{failed.length > 1 ? "s" : ""} failed.{" "}
-                <Link href="/scans" className="underline underline-offset-2">View details</Link>
+                <Link href="/scans" className="underline underline-offset-2 ag-text-link">
+                  View details
+                </Link>
               </p>
             </div>
           )}

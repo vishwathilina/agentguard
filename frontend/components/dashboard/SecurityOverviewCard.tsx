@@ -1,42 +1,54 @@
 "use client";
 
-import { AlertCircle, Flame, AlertTriangle, ArrowDown } from "lucide-react";
 import { Scan } from "@/types";
+import { CoolIcon, type CoolIconName, type IconTone } from "@/components/icons/CoolIcon";
 
 interface Props { scans: Scan[] }
 
-const severities = [
+const severities: {
+  key: keyof Scan;
+  label: string;
+  icon: CoolIconName;
+  tone: IconTone;
+  color: string;
+  dimColor: string;
+  borderColor: string;
+}[] = [
   {
-    key: "totalCritical" as keyof Scan,
+    key: "totalCritical",
     label: "CRITICAL",
-    icon: AlertCircle,
-    color: "#f85149",
-    dimColor: "rgba(248,81,73,0.12)",
-    borderColor: "rgba(248,81,73,0.25)",
+    icon: "warning",
+    tone: "danger",
+    color: "var(--ag-danger)",
+    dimColor: "color-mix(in srgb, var(--ag-danger) 12%, transparent)",
+    borderColor: "color-mix(in srgb, var(--ag-danger) 28%, transparent)",
   },
   {
-    key: "totalHigh" as keyof Scan,
+    key: "totalHigh",
     label: "HIGH",
-    icon: Flame,
-    color: "#e3b341",
-    dimColor: "rgba(227,179,65,0.12)",
-    borderColor: "rgba(227,179,65,0.25)",
+    icon: "shield-warning",
+    tone: "warning",
+    color: "var(--ag-warning)",
+    dimColor: "color-mix(in srgb, var(--ag-warning) 12%, transparent)",
+    borderColor: "color-mix(in srgb, var(--ag-warning) 28%, transparent)",
   },
   {
-    key: "totalMedium" as keyof Scan,
+    key: "totalMedium",
     label: "MEDIUM",
-    icon: AlertTriangle,
-    color: "#d29922",
-    dimColor: "rgba(210,153,34,0.10)",
-    borderColor: "rgba(210,153,34,0.20)",
+    icon: "warning",
+    tone: "coral",
+    color: "var(--ag-orange)",
+    dimColor: "color-mix(in srgb, var(--ag-orange) 10%, transparent)",
+    borderColor: "color-mix(in srgb, var(--ag-orange) 24%, transparent)",
   },
   {
-    key: "totalLow" as keyof Scan,
+    key: "totalLow",
     label: "LOW",
-    icon: ArrowDown,
-    color: "#3fb950",
-    dimColor: "rgba(63,185,80,0.10)",
-    borderColor: "rgba(63,185,80,0.20)",
+    icon: "shield-check",
+    tone: "safe",
+    color: "var(--ag-safe)",
+    dimColor: "color-mix(in srgb, var(--ag-safe) 10%, transparent)",
+    borderColor: "color-mix(in srgb, var(--ag-safe) 22%, transparent)",
   },
 ];
 
@@ -48,45 +60,60 @@ export function SecurityOverviewCard({ scans }: Props) {
     totalLow:      scans.reduce((s, x) => s + x.totalLow, 0),
   };
 
+  const completed = scans.filter((s) => s.status === "COMPLETED" && s.securityScore != null);
+  const avgScore =
+    completed.length > 0
+      ? Math.round(
+          completed.reduce((sum, s) => sum + (s.securityScore ?? 0), 0) / completed.length
+        )
+      : null;
+
   return (
-    <div
-      className="rounded-xl p-5"
-      style={{ background: "#161b22", border: "1px solid #30363d" }}
-    >
-      <div className="flex items-center justify-between mb-5">
+    <div className="ag-card p-5">
+      <div className="flex flex-wrap items-start justify-between gap-4 mb-5">
         <div>
-          <h2 className="text-sm font-semibold text-white">Security Overview</h2>
-          <p className="text-xs mt-0.5" style={{ color: "#8b949e" }}>
-            Aggregated across all scans
-          </p>
+          <h2 className="ag-text-section">Security posture</h2>
+          <p className="ag-text-meta mt-1">Aggregated across all scans</p>
         </div>
+        <div className="flex items-center gap-4 shrink-0">
+          {avgScore !== null && (
+            <div className="flex items-baseline gap-1">
+              <span className="ag-text-metric-xl" style={{ color: "var(--ag-cyan)" }}>
+                {avgScore}
+              </span>
+              <span className="ag-text-metric-denom">/100</span>
+            </div>
+          )}
         <span
-          className="text-[11px] font-medium px-2.5 py-1 rounded-full"
-          style={{ background: "rgba(63,185,80,0.12)", color: "#3fb950", border: "1px solid rgba(63,185,80,0.25)" }}
+          className="font-medium px-2.5 py-1 rounded-full flex items-center gap-1.5"
+          style={{
+            fontSize: "var(--ag-text-label)",
+            background: "color-mix(in srgb, var(--ag-safe) 12%, transparent)",
+            color: "var(--ag-safe)",
+            border: "1px solid color-mix(in srgb, var(--ag-safe) 28%, transparent)",
+            boxShadow: "var(--ag-glow-safe)",
+          }}
         >
+          <CoolIcon name="shield-check" tone="safe" size={12} />
           Live
         </span>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {severities.map(({ key, label, icon: Icon, color, dimColor, borderColor }) => (
+        {severities.map(({ key, label, icon, tone, color, dimColor, borderColor }) => (
           <div
             key={label}
             className="rounded-xl p-4"
             style={{ background: dimColor, border: `1px solid ${borderColor}` }}
           >
             <div className="flex items-center gap-2 mb-3">
-              <Icon className="h-3.5 w-3.5" style={{ color }} />
-              <span className="text-[11px] font-semibold tracking-widest" style={{ color }}>
+              <CoolIcon name={icon} tone={tone} size={15} />
+              <span className="ag-text-label" style={{ color }}>
                 {label}
               </span>
             </div>
-            <p
-              className="text-3xl font-bold font-mono tabular-nums leading-none"
-              style={{ color }}
-            >
-              {totals[key as keyof typeof totals]}
-            </p>
+            <p className="ag-text-metric-lg">{totals[key as keyof typeof totals]}</p>
           </div>
         ))}
       </div>

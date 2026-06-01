@@ -1,13 +1,14 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "../styles/coolicons-ag.css";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-urbanist), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -49,6 +50,36 @@
 }
 
 :root {
+  /* Urbanist + Splunk-inspired AgentGuard palette */
+  --ag-bg: #0a0c10;
+  --ag-surface: #12151c;
+  --ag-surface-elevated: #1a1f28;
+  --ag-border: #2a323d;
+  --ag-text: #eaeaea;
+  --ag-text-muted: #9aa3b2;
+  --ag-coral: #ff6f6e;
+  --ag-lime: #a9eb64;
+  --ag-orange: #ff934f;
+  --ag-cyan: #00f2ff;
+  --ag-safe: #a8ff53;
+  --ag-danger: #ff5f5f;
+  --ag-warning: #ffa233;
+  --ag-neutral: #d1d1d1;
+  --ag-glow-cyan: 0 0 24px rgba(0, 242, 255, 0.22);
+  --ag-glow-safe: 0 0 20px rgba(169, 235, 100, 0.18);
+  --ag-glow-danger: 0 0 20px rgba(255, 111, 110, 0.2);
+
+  /* Typography scale — tuned for readability on dark UI */
+  --ag-text-brand: 1.5rem;        /* 24px — logo */
+  --ag-text-section: 1.3125rem;   /* 21px — page / card headings */
+  --ag-text-nav: 0.9375rem;       /* 15px — nav, buttons, inputs */
+  --ag-text-title: 1.125rem;      /* 18px — list item titles */
+  --ag-text-body: 0.875rem;       /* 14px — body copy, table cells */
+  --ag-text-meta: 0.8125rem;      /* 13px — captions, secondary */
+  --ag-text-label: 0.8125rem;     /* 13px — uppercase labels, badges */
+  --ag-text-metric-xl: 3rem;      /* 48px — hero score */
+  --ag-text-metric-lg: 2.25rem;   /* 36px — summary stat numbers */
+
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -84,37 +115,37 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: var(--ag-bg);
+  --foreground: var(--ag-text);
+  --card: var(--ag-surface);
+  --card-foreground: var(--ag-text);
+  --popover: var(--ag-surface-elevated);
+  --popover-foreground: var(--ag-text);
+  --primary: var(--ag-cyan);
+  --primary-foreground: #0a0c10;
+  --secondary: var(--ag-surface-elevated);
+  --secondary-foreground: var(--ag-text);
+  --muted: var(--ag-surface-elevated);
+  --muted-foreground: var(--ag-text-muted);
+  --accent: var(--ag-surface-elevated);
+  --accent-foreground: var(--ag-text);
+  --destructive: var(--ag-danger);
+  --border: color-mix(in srgb, var(--ag-border) 88%, transparent);
+  --input: color-mix(in srgb, var(--ag-border) 70%, transparent);
+  --ring: var(--ag-cyan);
+  --chart-1: var(--ag-cyan);
+  --chart-2: var(--ag-lime);
+  --chart-3: var(--ag-orange);
+  --chart-4: var(--ag-coral);
+  --chart-5: var(--ag-warning);
+  --sidebar: var(--ag-surface);
+  --sidebar-foreground: var(--ag-text);
+  --sidebar-primary: var(--ag-cyan);
+  --sidebar-primary-foreground: #0a0c10;
+  --sidebar-accent: var(--ag-surface-elevated);
+  --sidebar-accent-foreground: var(--ag-text);
+  --sidebar-border: var(--ag-border);
+  --sidebar-ring: var(--ag-cyan);
 }
 
 @layer base {
@@ -122,9 +153,176 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
   }
   html {
     @apply font-sans;
+  }
+}
+
+@layer components {
+  .ag-shell {
+    background: var(--ag-bg);
+  }
+  .ag-main {
+    background: var(--ag-bg);
+  }
+  .ag-card {
+    background: var(--ag-surface);
+    border: 1px solid var(--ag-border);
+    border-radius: 0.75rem;
+  }
+  .ag-card-elevated {
+    background: var(--ag-surface-elevated);
+    border: 1px solid var(--ag-border);
+    border-radius: 0.75rem;
+  }
+  .ag-input {
+    background: var(--ag-bg);
+    border: 1px solid var(--ag-border);
+    color: var(--ag-text);
+    font-size: var(--ag-text-nav);
+    line-height: 1.4;
+  }
+  .ag-nav-active {
+    background: color-mix(in srgb, var(--ag-cyan) 14%, transparent);
+    border-left: 2px solid var(--ag-cyan);
+    color: var(--ag-text);
+    box-shadow: inset 0 0 20px rgba(0, 242, 255, 0.06);
+  }
+  .ag-logo-glow {
+    background: linear-gradient(135deg, var(--ag-coral) 0%, var(--ag-orange) 45%, var(--ag-cyan) 100%);
+    box-shadow: var(--ag-glow-cyan);
+  }
+  .ag-spinner {
+    border-color: var(--ag-cyan);
+    border-top-color: transparent;
+  }
+
+  /* Typography utilities */
+  .ag-text-brand {
+    font-size: var(--ag-text-brand);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    color: var(--ag-text);
+  }
+  .ag-text-section {
+    font-size: var(--ag-text-section);
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--ag-text);
+  }
+  .ag-text-nav {
+    font-size: var(--ag-text-nav);
+    font-weight: 500;
+    line-height: 1.4;
+  }
+  .ag-text-title {
+    font-size: var(--ag-text-title);
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--ag-text);
+  }
+  .ag-text-body {
+    font-size: var(--ag-text-body);
+    line-height: 1.55;
+    color: var(--ag-text-muted);
+  }
+  .ag-text-meta {
+    font-size: var(--ag-text-meta);
+    line-height: 1.5;
+    color: var(--ag-text-muted);
+  }
+  .ag-text-label {
+    font-size: var(--ag-text-label);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    line-height: 1.3;
+    color: var(--ag-text-muted);
+  }
+  .ag-text-metric-xl {
+    font-size: var(--ag-text-metric-xl);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+    color: var(--ag-text);
+  }
+  .ag-text-metric-lg {
+    font-size: var(--ag-text-metric-lg);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    color: var(--ag-text);
+  }
+  .ag-text-metric-denom {
+    font-size: var(--ag-text-nav);
+    font-weight: 400;
+    color: var(--ag-text-muted);
+  }
+  .ag-text-link {
+    font-size: var(--ag-text-body);
+    font-weight: 500;
+    color: var(--ag-cyan);
+  }
+  .ag-text-btn {
+    font-size: var(--ag-text-nav);
+    font-weight: 600;
+    line-height: 1.4;
+  }
+  .ag-sidebar-group {
+    font-size: var(--ag-text-label);
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ag-text-muted);
+    padding: 0.5rem 0.75rem 0.35rem;
+  }
+  .ag-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5625rem 1rem;
+    border-radius: 0.5rem;
+    font-size: var(--ag-text-nav);
+    font-weight: 600;
+    color: #0a0c10;
+    background: var(--ag-cyan);
+    transition: opacity 0.15s;
+  }
+  .ag-btn-primary:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+  .ag-btn-primary:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .ag-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5625rem 1rem;
+    border-radius: 0.5rem;
+    font-size: var(--ag-text-nav);
+    font-weight: 500;
+    color: var(--ag-text);
+    background: var(--ag-surface);
+    border: 1px solid var(--ag-border);
+    transition: background 0.15s;
+  }
+  .ag-btn-secondary:hover {
+    background: var(--ag-surface-elevated);
+  }
+  .ag-divider {
+    border-color: var(--ag-border);
+  }
+  .ag-stat-card {
+    background: var(--ag-surface);
+    border: 1px solid var(--ag-border);
+    border-radius: 0.75rem;
+    padding: 1.125rem;
   }
 }

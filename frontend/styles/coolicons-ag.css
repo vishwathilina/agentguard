@@ -1,0 +1,53 @@
+@font-face {
+  font-family: "coolicons";
+  src: url("/coolicons.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+.ci {
+  font-family: "coolicons" !important;
+  speak: never;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.ci-Bell:before { content: "\e944"; }
+.ci-Chart_Line:before { content: "\e964"; }
+.ci-Chat:before { content: "\e973"; }
+.ci-Chevron_Down:before { content: "\e97c"; }
+.ci-Cloud:before { content: "\e997"; }
+.ci-Code:before { content: "\e998"; }
+.ci-Data:before { content: "\e9a6"; }
+.ci-Folder:before { content: "\e9d9"; }
+.ci-Lock:before { content: "\ea11"; }
+.ci-Log_Out:before { content: "\ea12"; }
+.ci-Play:before { content: "\ea44"; }
+.ci-Search_Magnifying_Glass:before { content: "\ea52"; }
+.ci-Settings:before { content: "\ea55"; }
+.ci-Shield_Check:before { content: "\ea58"; }
+.ci-Shield_Warning:before { content: "\ea59"; }
+.ci-Shield:before { content: "\ea5a"; }
+.ci-Trash_Full:before { content: "\ea8b"; }
+.ci-Trending_Down:before { content: "\ea8c"; }
+.ci-Trending_Up:before { content: "\ea8d"; }
+.ci-User_01:before { content: "\ea95"; }
+.ci-Warning:before { content: "\eaa8"; }
+.ci-Add_Plus:before { content: "\e904"; }
+.ci-Close_MD:before { content: "\e98d"; }
+
+.ci-tone-muted { color: var(--ag-text-muted); }
+.ci-tone-default { color: var(--ag-text); }
+.ci-tone-primary { color: var(--ag-cyan); }
+.ci-tone-safe { color: var(--ag-safe); }
+.ci-tone-danger { color: var(--ag-danger); }
+.ci-tone-warning { color: var(--ag-warning); }
+.ci-tone-neutral { color: var(--ag-neutral); }
+.ci-tone-coral { color: var(--ag-coral); }
+.ci-tone-lime { color: var(--ag-lime); }

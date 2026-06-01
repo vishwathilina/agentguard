@@ -4,11 +4,9 @@ import { useEffect, useState, useMemo } from "react";
 import { repositoriesApi, scansApi, githubApi, GitHubRepo } from "@/lib/api";
 import { Repository } from "@/types";
 import { formatDate } from "@/lib/utils";
-import {
-  GitBranch, Plus, Trash2, Play, Container, Search,
-  Lock, Star, X, ChevronDown, Loader2, ShieldCheck, Settings2, Cpu,
-} from "lucide-react";
 import { useRouter } from "next/navigation";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { CoolIcon } from "@/components/icons/CoolIcon";
 
 // ── Tool catalogue ──────────────────────────────────────────────────────────
 const TOOL_CATALOGUE = [
@@ -37,7 +35,7 @@ const TOOL_CATALOGUE = [
     forTypes: ["GIT_REPO"],
   },
   {
-    name: "OWASP_DEPENDENCY_CHECK",
+    name: "OWASP_DEP_CHECK",
     label: "OWASP Dep-Check",
     desc: "Checks Java/Maven/Gradle dependencies against CVE database.",
     forTypes: ["GIT_REPO"],
@@ -45,8 +43,50 @@ const TOOL_CATALOGUE = [
   {
     name: "KUBE_BENCH",
     label: "Kubernetes config",
-    desc: "Scans Kubernetes manifests for security misconfigurations.",
+    desc: "Scans Kubernetes manifests for security misconfigurations (Trivy config).",
     forTypes: ["GIT_REPO"],
+  },
+  {
+    name: "SEMGREP",
+    label: "Semgrep",
+    desc: "Static analysis (SAST) for security bugs across many languages.",
+    forTypes: ["GIT_REPO"],
+  },
+  {
+    name: "CHECKOV",
+    label: "Checkov",
+    desc: "Policy-as-code scanner for Terraform, Kubernetes, and Docker.",
+    forTypes: ["GIT_REPO"],
+  },
+  {
+    name: "HADOLINT",
+    label: "Hadolint",
+    desc: "Lints Dockerfiles for best practices and common mistakes.",
+    forTypes: ["GIT_REPO"],
+  },
+  {
+    name: "BANDIT",
+    label: "Bandit",
+    desc: "Finds common security issues in Python source code.",
+    forTypes: ["GIT_REPO"],
+  },
+  {
+    name: "OSV_SCANNER",
+    label: "OSV Scanner",
+    desc: "Scans dependency manifests against the OSV vulnerability database.",
+    forTypes: ["GIT_REPO"],
+  },
+  {
+    name: "GRYPE",
+    label: "Grype",
+    desc: "CVE scanner for container images and filesystem dependencies.",
+    forTypes: ["GIT_REPO", "DOCKER_IMAGE"],
+  },
+  {
+    name: "DOCKLE",
+    label: "Dockle",
+    desc: "Container image linter for CIS Docker benchmarks.",
+    forTypes: ["DOCKER_IMAGE"],
   },
 ] as const;
 
@@ -226,7 +266,7 @@ export default function RepositoriesPage() {
       });
     } catch (e: any) {
       const fallback = TOOL_CATALOGUE
-        .filter((t) => t.forTypes.includes(repo.targetType as any))
+        .filter((t) => (t.forTypes as readonly string[]).includes(repo.targetType))
         .map((t) => t.name);
       setScanModal({
         repo,
@@ -280,128 +320,122 @@ export default function RepositoriesPage() {
   return (
     <>
     <div className="space-y-5 max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between pb-1">
-        <div className="flex items-center gap-3">
-          <div
-            className="h-8 w-8 rounded-lg flex items-center justify-center"
-            style={{ background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)" }}
-          >
-            <GitBranch className="h-4 w-4" style={{ color: "#818cf8" }} />
-          </div>
-          <div>
-            <h1 className="text-base font-semibold text-white leading-none">Repositories</h1>
-            <p className="text-[11px] mt-0.5" style={{ color: "#8b949e" }}>Manage repos and Docker images to scan.</p>
-          </div>
-        </div>
+      <PageHeader
+        icon="folder"
+        tone="primary"
+        title="Infrastructure"
+        subtitle="Manage repos and Docker images to scan"
+      >
         {!addMode && (
-          <div className="flex gap-2">
-            <button
-              onClick={openGitHub}
-              className="flex items-center gap-2 text-white text-xs font-medium px-3 py-2 rounded-lg transition-opacity hover:opacity-90"
-              style={{ background: "#6366f1" }}
-            >
-              <GitBranch className="h-3.5 w-3.5" /> My Repos
+          <div className="flex gap-2 flex-wrap">
+            <button type="button" onClick={openGitHub} className="ag-btn-primary">
+              <CoolIcon name="code" tone="default" size={14} className="!text-[#0a0c10]" />
+              My repos
             </button>
-            <button
-              onClick={() => setAddMode("url")}
-              className="flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg transition-colors"
-              style={{ background: "#161b22", border: "1px solid #30363d", color: "#c9d1d9" }}
-            >
-              <Plus className="h-3.5 w-3.5" /> Add by URL
+            <button type="button" onClick={() => setAddMode("url")} className="ag-btn-secondary">
+              <CoolIcon name="plus" tone="primary" size={14} />
+              Add by URL
             </button>
-            <button
-              onClick={() => setAddMode("docker")}
-              className="flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg transition-colors"
-              style={{ background: "#161b22", border: "1px solid #30363d", color: "#c9d1d9" }}
-            >
-              <Container className="h-3.5 w-3.5" /> Docker Image
+            <button type="button" onClick={() => setAddMode("docker")} className="ag-btn-secondary">
+              <CoolIcon name="cloud" tone="primary" size={14} />
+              Docker image
             </button>
           </div>
         )}
-      </div>
+      </PageHeader>
 
       {/* Error banner */}
       {error && (
-        <div className="flex items-center justify-between bg-red-950/60 border border-red-800 text-red-300 text-sm rounded-xl px-4 py-3">
+        <div
+          className="flex items-center justify-between rounded-xl px-4 py-3 ag-text-nav"
+          style={{
+            background: "color-mix(in srgb, var(--ag-danger) 10%, transparent)",
+            border: "1px solid color-mix(in srgb, var(--ag-danger) 28%, transparent)",
+            color: "var(--ag-danger)",
+          }}
+        >
           <span>{error}</span>
-          <button onClick={() => setError(null)} className="ml-4 text-red-400 hover:text-red-200" aria-label="Dismiss">
-            <X className="h-4 w-4" />
+          <button
+            type="button"
+            onClick={() => setError(null)}
+            className="ml-4 hover:opacity-80"
+            aria-label="Dismiss"
+          >
+            <CoolIcon name="close" tone="danger" size={16} />
           </button>
         </div>
       )}
 
       {/* GitHub Repo Picker */}
       {addMode === "github" && (
-        <div className="rounded-xl overflow-hidden" style={{ background: "#161b22", border: "1px solid #30363d" }}>
-          <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid #30363d" }}>
-            <h2 className="text-sm font-semibold text-white">Select a GitHub Repository</h2>
-            <button onClick={resetAdd} style={{ color: "#6e7681" }} className="hover:text-white transition-colors">
-              <X className="h-4 w-4" />
+        <div className="ag-card overflow-hidden p-0">
+          <div className="flex items-center justify-between px-5 py-4 border-b ag-divider">
+            <h2 className="ag-text-section">Select a GitHub repository</h2>
+            <button type="button" onClick={resetAdd} className="hover:opacity-80 text-[var(--ag-text-muted)]">
+              <CoolIcon name="close" tone="muted" size={16} />
             </button>
           </div>
 
           {/* Search */}
-          <div className="px-4 py-3" style={{ borderBottom: "1px solid #30363d" }}>
+          <div className="px-4 py-3 border-b ag-divider">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "#6e7681" }} />
+              <CoolIcon
+                name="search"
+                tone="muted"
+                size={15}
+                className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+              />
               <input
                 autoFocus
                 value={ghSearch}
                 onChange={(e) => setGhSearch(e.target.value)}
                 placeholder="Search repositories..."
-                className="w-full rounded-lg pl-9 pr-3 py-2 text-sm text-white outline-none"
-                style={{ background: "#0d1117", border: "1px solid #30363d" }}
+                className="w-full rounded-lg pl-9 pr-3 py-2 ag-text-nav text-white outline-none ag-input"
               />
             </div>
           </div>
 
           {/* List */}
-          <div className="max-h-72 overflow-y-auto" style={{ borderBottom: "1px solid #21262d" }}>
+          <div className="max-h-72 overflow-y-auto border-b ag-divider">
             {ghLoading ? (
               <div className="flex justify-center py-10">
-                <Loader2 className="h-6 w-6 animate-spin" style={{ color: "#818cf8" }} />
+                <div className="h-6 w-6 rounded-full border-2 animate-spin ag-spinner" />
               </div>
             ) : ghError ? (
-              <p className="text-center text-sm py-10 px-4" style={{ color: "#f85149" }}>{ghError}</p>
+              <p className="text-center ag-text-nav py-10 px-4" style={{ color: "var(--ag-danger)" }}>{ghError}</p>
             ) : filteredGhRepos.length === 0 ? (
-              <p className="text-center text-sm py-10" style={{ color: "#6e7681" }}>No repositories found.</p>
+              <p className="text-center ag-text-body py-10">No repositories found.</p>
             ) : (
               filteredGhRepos.map((r) => (
                 <button
                   key={r.id}
+                  type="button"
                   onClick={() => { setSelectedRepo(r); setBranch(r.defaultBranch); }}
-                  className="w-full text-left px-5 py-3 flex items-start gap-3 transition-colors"
-                  style={
+                  className={`w-full text-left px-5 py-3 flex items-start gap-3 transition-colors border-l-2 ${
                     selectedRepo?.id === r.id
-                      ? { background: "rgba(99,102,241,0.08)", borderLeft: "2px solid #6366f1" }
-                      : { borderLeft: "2px solid transparent" }
-                  }
-                  onMouseEnter={(e) => { if (selectedRepo?.id !== r.id) e.currentTarget.style.background = "#0d1117"; }}
-                  onMouseLeave={(e) => { if (selectedRepo?.id !== r.id) e.currentTarget.style.background = "transparent"; }}
+                      ? "ag-nav-active"
+                      : "border-transparent hover:bg-[var(--ag-bg)]"
+                  }`}
                 >
-                  <GitBranch className="h-4 w-4 mt-0.5 shrink-0" style={{ color: "#6e7681" }} />
+                  <CoolIcon name="code" tone="muted" size={16} className="mt-0.5 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-white font-medium truncate">{r.fullName}</span>
-                      {r.isPrivate && <Lock className="h-3 w-3 shrink-0" style={{ color: "#6e7681" }} />}
+                      <span className="ag-text-title truncate">{r.fullName}</span>
+                      {r.isPrivate && <CoolIcon name="lock" tone="muted" size={12} className="shrink-0" />}
                       {r.language && (
                         <span
-                          className="text-xs px-1.5 py-0.5 rounded"
-                          style={{ background: "#0d1117", color: "#8b949e" }}
+                          className="ag-text-meta px-1.5 py-0.5 rounded"
+                          style={{ background: "var(--ag-bg)" }}
                         >
                           {r.language}
                         </span>
                       )}
                     </div>
                     {r.description && (
-                      <p className="text-xs truncate mt-0.5" style={{ color: "#6e7681" }}>{r.description}</p>
+                      <p className="ag-text-meta truncate mt-0.5">{r.description}</p>
                     )}
                   </div>
-                  <div className="flex items-center gap-1 text-xs shrink-0" style={{ color: "#6e7681" }}>
-                    <Star className="h-3 w-3" />
-                    {r.stargazersCount}
-                  </div>
+                  <span className="ag-text-meta shrink-0">{r.stargazersCount} ★</span>
                 </button>
               ))
             )}
@@ -409,32 +443,30 @@ export default function RepositoriesPage() {
 
           {/* Branch + confirm */}
           {selectedRepo && (
-            <div className="px-5 py-4 flex items-center gap-3" style={{ borderTop: "1px solid #30363d" }}>
-              <div className="flex-1">
-                <p className="text-xs mb-1" style={{ color: "#8b949e" }}>
-                  Selected: <span className="text-white">{selectedRepo.fullName}</span>
+            <div className="px-5 py-4 flex items-center gap-3 border-t ag-divider flex-wrap">
+              <div className="flex-1 min-w-[200px]">
+                <p className="ag-text-meta mb-1">
+                  Selected: <span className="text-[var(--ag-text)]">{selectedRepo.fullName}</span>
                 </p>
                 <div className="flex items-center gap-2">
-                  <ChevronDown className="h-4 w-4" style={{ color: "#6e7681" }} />
+                  <CoolIcon name="chevron-down" tone="muted" size={14} />
                   <input
                     value={branch}
                     onChange={(e) => setBranch(e.target.value)}
                     placeholder="Branch"
-                    className="rounded px-2 py-1 text-sm text-white w-32 outline-none"
-                    style={{ background: "#0d1117", border: "1px solid #30363d" }}
+                    className="rounded-lg px-2 py-1 ag-text-nav text-white w-32 outline-none ag-input"
                   />
                 </div>
               </div>
-              <button
-                onClick={handleAddGitHub}
-                disabled={saving}
-                className="flex items-center gap-2 text-white text-sm font-medium px-4 py-2 rounded-lg transition-opacity hover:opacity-90 disabled:opacity-50"
-                style={{ background: "#6366f1" }}
-              >
-                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                Add Repository
+              <button type="button" onClick={handleAddGitHub} disabled={saving} className="ag-btn-primary">
+                {saving ? (
+                  <div className="h-4 w-4 rounded-full border-2 border-t-transparent animate-spin border-[#0a0c10]" />
+                ) : (
+                  <CoolIcon name="plus" tone="default" size={16} className="!text-[#0a0c10]" />
+                )}
+                Add repository
               </button>
-              <button onClick={resetAdd} className="text-sm hover:text-white transition-colors" style={{ color: "#6e7681" }}>
+              <button type="button" onClick={resetAdd} className="ag-text-nav text-[var(--ag-text-muted)] hover:text-white">
                 Cancel
               </button>
             </div>
@@ -444,67 +476,57 @@ export default function RepositoriesPage() {
 
       {/* Add by URL Form */}
       {addMode === "url" && (
-        <form
-          onSubmit={handleAddByUrl}
-          className="rounded-xl overflow-hidden"
-          style={{ background: "#161b22", border: "1px solid #30363d" }}
-        >
-          <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid #30363d" }}>
+        <form onSubmit={handleAddByUrl} className="ag-card overflow-hidden p-0">
+          <div className="flex items-center justify-between px-5 py-4 border-b ag-divider">
             <div className="flex items-center gap-2">
-              <GitBranch className="h-4 w-4" style={{ color: "#818cf8" }} />
-              <h2 className="text-sm font-semibold text-white">Add GitHub Repository by URL</h2>
+              <CoolIcon name="code" tone="primary" size={18} />
+              <h2 className="ag-text-section">Add GitHub repository by URL</h2>
             </div>
-            <button type="button" onClick={resetAdd} style={{ color: "#6e7681" }} className="hover:text-white transition-colors">
-              <X className="h-4 w-4" />
+            <button type="button" onClick={resetAdd} className="hover:opacity-80">
+              <CoolIcon name="close" tone="muted" size={16} />
             </button>
           </div>
 
           <div className="px-5 py-5 space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-medium" style={{ color: "#8b949e" }}>
-                Repository URL or slug
-              </label>
+              <label className="ag-text-meta">Repository URL or slug</label>
               <input
                 required
                 autoFocus
                 value={repoUrl}
                 onChange={(e) => { setRepoUrl(e.target.value); setUrlError(null); }}
                 placeholder="https://github.com/owner/repo  or  owner/repo"
-                className="w-full rounded-lg px-3 py-2 text-sm text-white outline-none font-mono placeholder:font-sans"
-                style={{ background: "#0d1117", border: `1px solid ${urlError ? "#f85149" : "#30363d"}` }}
+                className="w-full rounded-lg px-3 py-2 ag-text-nav text-white outline-none font-mono placeholder:font-sans ag-input"
+                style={urlError ? { borderColor: "var(--ag-danger)" } : undefined}
               />
               {urlError && (
-                <p className="text-xs" style={{ color: "#f85149" }}>{urlError}</p>
+                <p className="ag-text-body" style={{ color: "var(--ag-danger)" }}>{urlError}</p>
               )}
-              <p className="text-[11px]" style={{ color: "#6e7681" }}>
+              <p className="ag-text-body">
                 Supports public and private repos you have access to.
               </p>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium" style={{ color: "#8b949e" }}>
-                Branch
-              </label>
+              <label className="ag-text-meta">Branch</label>
               <input
                 value={urlBranch}
                 onChange={(e) => setUrlBranch(e.target.value)}
                 placeholder="main"
-                className="w-full rounded-lg px-3 py-2 text-sm text-white outline-none w-48"
-                style={{ background: "#0d1117", border: "1px solid #30363d" }}
+                className="w-full rounded-lg px-3 py-2 ag-text-nav text-white outline-none w-48 ag-input"
               />
             </div>
 
             <div className="flex gap-3 pt-1">
-              <button
-                type="submit"
-                disabled={saving || !repoUrl.trim()}
-                className="flex items-center gap-2 text-white text-sm font-medium px-4 py-2 rounded-lg transition-opacity hover:opacity-90 disabled:opacity-50"
-                style={{ background: "#6366f1" }}
-              >
-                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                Add Repository
+              <button type="submit" disabled={saving || !repoUrl.trim()} className="ag-btn-primary">
+                {saving ? (
+                  <div className="h-4 w-4 rounded-full border-2 border-t-transparent animate-spin border-[#0a0c10]" />
+                ) : (
+                  <CoolIcon name="plus" tone="default" size={16} className="!text-[#0a0c10]" />
+                )}
+                Add repository
               </button>
-              <button type="button" onClick={resetAdd} className="text-sm px-2 hover:text-white transition-colors" style={{ color: "#6e7681" }}>
+              <button type="button" onClick={resetAdd} className="ag-text-nav text-[var(--ag-text-muted)] hover:text-white px-2">
                 Cancel
               </button>
             </div>
@@ -514,15 +536,11 @@ export default function RepositoriesPage() {
 
       {/* Docker Image Form */}
       {addMode === "docker" && (
-        <form
-          onSubmit={handleAddDocker}
-          className="rounded-xl p-5 space-y-4"
-          style={{ background: "#161b22", border: "1px solid #30363d" }}
-        >
+        <form onSubmit={handleAddDocker} className="ag-card p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-white">Add Docker Image</h2>
-            <button type="button" onClick={resetAdd} style={{ color: "#6e7681" }}>
-              <X className="h-4 w-4" />
+            <h2 className="ag-text-section">Add Docker image</h2>
+            <button type="button" onClick={resetAdd} className="hover:opacity-80">
+              <CoolIcon name="close" tone="muted" size={16} />
             </button>
           </div>
           <input
@@ -531,20 +549,16 @@ export default function RepositoriesPage() {
             placeholder="nginx:latest  or  ghcr.io/org/image:tag"
             value={dockerImage}
             onChange={(e) => setDockerImage(e.target.value)}
-            className="w-full rounded-lg px-3 py-2 text-sm text-white outline-none"
-            style={{ background: "#0d1117", border: "1px solid #30363d" }}
+            className="w-full rounded-lg px-3 py-2 ag-text-nav text-white outline-none ag-input"
           />
           <div className="flex gap-3">
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex items-center gap-2 text-white text-sm font-medium px-4 py-2 rounded-lg transition-opacity hover:opacity-90 disabled:opacity-50"
-              style={{ background: "#6366f1" }}
-            >
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              Add Image
+            <button type="submit" disabled={saving} className="ag-btn-primary">
+              {saving && (
+                <div className="h-4 w-4 rounded-full border-2 border-t-transparent animate-spin border-[#0a0c10]" />
+              )}
+              Add image
             </button>
-            <button type="button" onClick={resetAdd} className="text-sm px-2" style={{ color: "#6e7681" }}>
+            <button type="button" onClick={resetAdd} className="ag-text-nav text-[var(--ag-text-muted)] px-2">
               Cancel
             </button>
           </div>
@@ -554,62 +568,61 @@ export default function RepositoriesPage() {
       {/* Repo List */}
       {loading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin" style={{ color: "#818cf8" }} />
+          <div className="h-8 w-8 rounded-full border-2 animate-spin ag-spinner" />
         </div>
       ) : repos.length === 0 ? (
-        <div
-          className="rounded-xl p-12 text-center text-sm"
-          style={{ background: "#161b22", border: "1px solid #30363d", color: "#6e7681" }}
-        >
+        <div className="ag-card p-12 text-center ag-text-body">
           No targets added yet. Add a GitHub repo or Docker image to get started.
         </div>
       ) : (
         <div className="space-y-3">
           {repos.map((repo) => (
-            <div
-              key={repo.id}
-              className="rounded-xl p-4 flex items-center gap-4 transition-colors"
-              style={{ background: "#161b22", border: "1px solid #30363d" }}
-            >
+            <div key={repo.id} className="ag-card p-4 flex items-center gap-4">
               <div
                 className="h-10 w-10 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: "#0d1117", border: "1px solid #21262d" }}
+                style={{
+                  background: "var(--ag-bg)",
+                  border: "1px solid var(--ag-border)",
+                }}
               >
-                {repo.targetType === "GIT_REPO" ? (
-                  <GitBranch className="h-5 w-5" style={{ color: "#818cf8" }} />
-                ) : (
-                  <Container className="h-5 w-5" style={{ color: "#38bdf8" }} />
-                )}
+                <CoolIcon
+                  name={repo.targetType === "GIT_REPO" ? "code" : "cloud"}
+                  tone="primary"
+                  size={20}
+                />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">
+                <p className="ag-text-title truncate">
                   {repo.githubRepoFullName ?? repo.dockerImage}
                 </p>
-                <p className="text-xs mt-0.5" style={{ color: "#6e7681" }}>
+                <p className="ag-text-meta mt-0.5">
                   {repo.targetType === "GIT_REPO"
                     ? `Branch: ${repo.defaultBranch}`
-                    : "Docker Image"}{" "}
+                    : "Docker image"}{" "}
                   · Last scanned: {formatDate(repo.lastScannedAt)}
                 </p>
               </div>
               <div className="flex items-center gap-2">
                 <button
+                  type="button"
                   onClick={() => openScanModal(repo)}
                   disabled={!!triggering}
-                  className="flex items-center gap-1.5 text-xs text-white px-3 py-1.5 rounded-lg transition-opacity hover:opacity-90 disabled:opacity-50"
-                  style={{ background: "#6366f1" }}
+                  className="ag-btn-primary text-[length:var(--ag-text-body)] px-3 py-1.5"
+                  style={{ fontSize: "var(--ag-text-body)" }}
                 >
-                  {triggering === repo.id
-                    ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    : <Play className="h-3.5 w-3.5" />}
-                  {triggering === repo.id ? "Starting..." : "Scan"}
+                  {triggering === repo.id ? (
+                    <div className="h-3.5 w-3.5 rounded-full border-2 border-t-transparent animate-spin border-[#0a0c10]" />
+                  ) : (
+                    <CoolIcon name="play" tone="default" size={14} className="!text-[#0a0c10]" />
+                  )}
+                  {triggering === repo.id ? "Starting…" : "Scan"}
                 </button>
                 <button
+                  type="button"
                   onClick={() => handleDelete(repo.id)}
-                  className="p-1.5 rounded transition-colors hover:text-red-400"
-                  style={{ color: "#6e7681" }}
+                  className="p-1.5 rounded hover:opacity-80"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <CoolIcon name="trash" tone="danger" size={16} />
                 </button>
               </div>
             </div>
@@ -622,41 +635,44 @@ export default function RepositoriesPage() {
     {scanModal && (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
         <div
-          className="w-full max-w-md rounded-2xl shadow-2xl flex flex-col"
-          style={{ background: "#161b22", border: "1px solid #30363d", maxHeight: "calc(100vh - 2rem)" }}
+          className="w-full max-w-md rounded-2xl shadow-2xl flex flex-col ag-card p-0"
+          style={{ maxHeight: "calc(100vh - 2rem)" }}
         >
-
-          {/* Header */}
-          <div className="flex items-center justify-between px-6 py-5" style={{ borderBottom: "1px solid #30363d" }}>
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between px-6 py-5 border-b ag-divider">
+            <div className="flex items-center gap-3 min-w-0">
               <div
-                className="h-9 w-9 rounded-lg flex items-center justify-center"
-                style={{ background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)" }}
+                className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0"
+                style={{
+                  background: "color-mix(in srgb, var(--ag-cyan) 14%, transparent)",
+                  border: "1px solid color-mix(in srgb, var(--ag-cyan) 32%, transparent)",
+                }}
               >
-                {scanModal.step === "detecting"
-                  ? <Cpu className="h-5 w-5 animate-pulse" style={{ color: "#818cf8" }} />
-                  : <Settings2 className="h-5 w-5" style={{ color: "#818cf8" }} />}
+                <CoolIcon
+                  name={scanModal.step === "detecting" ? "data" : "settings"}
+                  tone="primary"
+                  size={20}
+                  className={scanModal.step === "detecting" ? "animate-pulse" : ""}
+                />
               </div>
-              <div>
-                <p className="text-sm font-semibold text-white">
-                  {scanModal.step === "detecting" ? "Detecting Tech Stack" : "Configure Scan"}
+              <div className="min-w-0">
+                <p className="ag-text-title">
+                  {scanModal.step === "detecting" ? "Detecting tech stack" : "Configure scan"}
                 </p>
-                <p className="text-xs truncate max-w-[220px]" style={{ color: "#8b949e" }}>
+                <p className="ag-text-meta truncate max-w-[220px]">
                   {scanModal.repo.githubRepoFullName ?? scanModal.repo.dockerImage}
                 </p>
               </div>
             </div>
-            <button onClick={() => setScanModal(null)} style={{ color: "#6e7681" }} className="hover:text-white transition-colors">
-              <X className="h-5 w-5" />
+            <button type="button" onClick={() => setScanModal(null)} className="hover:opacity-80 shrink-0">
+              <CoolIcon name="close" tone="muted" size={20} />
             </button>
           </div>
 
-          {/* ── Step 1: detecting ── */}
           {scanModal.step === "detecting" && (
             <div className="px-6 py-12 flex flex-col items-center gap-4">
-              <Loader2 className="h-10 w-10 animate-spin" style={{ color: "#818cf8" }} />
-              <p className="text-sm" style={{ color: "#8b949e" }}>Cloning repo &amp; scanning for tech stack…</p>
-              <p className="text-xs" style={{ color: "#6e7681" }}>This takes a few seconds</p>
+              <div className="h-10 w-10 rounded-full border-2 animate-spin ag-spinner" />
+              <p className="ag-text-nav text-[var(--ag-text-muted)]">Cloning repo &amp; scanning for tech stack…</p>
+              <p className="ag-text-body">This takes a few seconds</p>
             </div>
           )}
 
@@ -667,21 +683,23 @@ export default function RepositoriesPage() {
               <div className="overflow-y-auto flex-1 min-h-0">
               {/* Detected stacks */}
               <div className="px-6 pt-5 pb-3">
-                <p className="text-[11px] font-semibold tracking-wider uppercase mb-3" style={{ color: "#6e7681" }}>
-                  Detected Tech Stack
-                </p>
+                <p className="ag-text-label mb-3">Detected tech stack</p>
                 {scanModal.detectError && (
-                  <p className="text-xs mb-3" style={{ color: "#d29922" }}>{scanModal.detectError}</p>
+                  <p className="ag-text-body mb-3" style={{ color: "var(--ag-warning)" }}>{scanModal.detectError}</p>
                 )}
                 {scanModal.detectedStacks.length === 0 && !scanModal.detectError ? (
-                  <p className="text-xs italic" style={{ color: "#6e7681" }}>Nothing specific detected — generic scanners recommended.</p>
+                  <p className="ag-text-body italic">Nothing specific detected — generic scanners recommended.</p>
                 ) : (
                   <div className="flex flex-wrap gap-2">
                     {scanModal.detectedStacks.map((s) => (
                       <span
                         key={s}
-                        className="text-xs px-2.5 py-1 rounded-full"
-                        style={{ background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.3)", color: "#a5b4fc" }}
+                        className="ag-text-meta px-2.5 py-1 rounded-full"
+                        style={{
+                          background: "color-mix(in srgb, var(--ag-cyan) 12%, transparent)",
+                          border: "1px solid color-mix(in srgb, var(--ag-cyan) 30%, transparent)",
+                          color: "var(--ag-cyan)",
+                        }}
                       >
                         {TECH_LABELS[s] ?? s}
                       </span>
@@ -690,15 +708,12 @@ export default function RepositoriesPage() {
                 )}
               </div>
 
-              <div className="mx-6" style={{ borderTop: "1px solid #30363d" }} />
+              <div className="mx-6 border-t ag-divider" />
 
-              {/* Tool checkboxes */}
               <div className="px-6 py-4 space-y-2.5">
-                <p className="text-[11px] font-semibold tracking-wider uppercase mb-3" style={{ color: "#6e7681" }}>
-                  Scanners to run
-                </p>
+                <p className="ag-text-label mb-3">Scanners to run</p>
                 {TOOL_CATALOGUE.filter((t) =>
-                  t.forTypes.includes(scanModal.repo.targetType as any)
+                  (t.forTypes as readonly string[]).includes(scanModal.repo.targetType)
                 ).map((tool) => {
                   const checked     = scanModal.selectedTools.includes(tool.name);
                   const recommended = scanModal.recommendedTools.includes(tool.name);
@@ -709,17 +724,19 @@ export default function RepositoriesPage() {
                       className="flex items-start gap-3 rounded-xl p-3.5 cursor-pointer transition-all select-none"
                       style={
                         checked
-                          ? { border: "1px solid rgba(99,102,241,0.5)", background: "rgba(99,102,241,0.08)" }
-                          : { border: "1px solid #30363d", background: "transparent" }
+                          ? {
+                              border: "1px solid color-mix(in srgb, var(--ag-cyan) 45%, transparent)",
+                              background: "color-mix(in srgb, var(--ag-cyan) 8%, transparent)",
+                            }
+                          : { border: "1px solid var(--ag-border)", background: "transparent" }
                       }
                     >
-                      {/* Custom checkbox */}
                       <div
                         className="h-4 w-4 rounded flex items-center justify-center shrink-0 mt-0.5 transition-all"
                         style={
                           checked
-                            ? { background: "#6366f1", border: "1px solid #6366f1" }
-                            : { background: "transparent", border: "1px solid #484f58" }
+                            ? { background: "var(--ag-cyan)", border: "1px solid var(--ag-cyan)" }
+                            : { background: "transparent", border: "1px solid var(--ag-border)" }
                         }
                       >
                         {checked && (
@@ -730,17 +747,21 @@ export default function RepositoriesPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-medium text-white">{tool.label}</span>
+                          <span className="ag-text-title font-medium">{tool.label}</span>
                           {recommended && (
                             <span
-                              className="text-[10px] px-1.5 py-0.5 rounded-full"
-                              style={{ background: "rgba(63,185,80,0.12)", color: "#3fb950", border: "1px solid rgba(63,185,80,0.25)" }}
+                              className="ag-text-label px-1.5 py-0.5 rounded-full normal-case"
+                              style={{
+                                background: "color-mix(in srgb, var(--ag-safe) 12%, transparent)",
+                                color: "var(--ag-safe)",
+                                border: "1px solid color-mix(in srgb, var(--ag-safe) 28%, transparent)",
+                              }}
                             >
                               recommended
                             </span>
                           )}
                         </div>
-                        <p className="text-xs mt-0.5" style={{ color: "#8b949e" }}>{tool.desc}</p>
+                        <p className="ag-text-meta mt-0.5">{tool.desc}</p>
                       </div>
                     </label>
                   );
@@ -749,29 +770,26 @@ export default function RepositoriesPage() {
               </div>{/* end scrollable body */}
 
               {/* Footer — always visible */}
-              <div
-                className="px-6 py-4 flex items-center justify-between gap-3 shrink-0"
-                style={{ borderTop: "1px solid #30363d" }}
-              >
-                <span className="text-xs" style={{ color: "#6e7681" }}>
+              <div className="px-6 py-4 flex items-center justify-between gap-3 shrink-0 border-t ag-divider">
+                <span className="ag-text-body">
                   {scanModal.selectedTools.length} scanner{scanModal.selectedTools.length !== 1 ? "s" : ""} selected
                 </span>
                 <div className="flex gap-2">
                   <button
+                    type="button"
                     onClick={() => setScanModal(null)}
-                    className="text-sm px-3 py-2 rounded-lg transition-colors hover:text-white"
-                    style={{ color: "#8b949e" }}
+                    className="ag-text-nav px-3 py-2 text-[var(--ag-text-muted)] hover:text-white"
                   >
                     Cancel
                   </button>
                   <button
+                    type="button"
                     onClick={handleScan}
                     disabled={scanModal.selectedTools.length === 0}
-                    className="flex items-center gap-2 text-white text-sm font-medium px-4 py-2 rounded-lg transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
-                    style={{ background: "#6366f1" }}
+                    className="ag-btn-primary disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    <ShieldCheck className="h-4 w-4" />
-                    Start Scan
+                    <CoolIcon name="shield-check" tone="default" size={16} className="!text-[#0a0c10]" />
+                    Start scan
                   </button>
                 </div>
               </div>

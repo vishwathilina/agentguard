@@ -37,6 +37,13 @@ public class TechDetectorService {
                 if (name.equals("package.json") && !relative.contains("node_modules")) {
                     stacks.add(TechStack.NODE_JS);
                 }
+                if (name.equals("requirements.txt") || name.equals("pyproject.toml")
+                        || name.equals("setup.py") || name.equals("Pipfile")) {
+                    stacks.add(TechStack.PYTHON);
+                }
+                if (name.equals("go.mod")) {
+                    stacks.add(TechStack.GO);
+                }
                 if (name.equals("Dockerfile") || name.startsWith("Dockerfile.")) {
                     stacks.add(TechStack.DOCKER);
                 }

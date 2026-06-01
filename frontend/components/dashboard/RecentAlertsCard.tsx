@@ -1,8 +1,8 @@
 "use client";
 
-import { Bell, AlertCircle, Flame, AlertTriangle, ArrowRight } from "lucide-react";
 import { Scan } from "@/types";
 import Link from "next/link";
+import { CoolIcon, type CoolIconName, type IconTone } from "@/components/icons/CoolIcon";
 
 interface Props { scans: Scan[] }
 
@@ -24,10 +24,28 @@ function timeAgo(dateStr?: string | null): string {
   return `${Math.floor(m / 1440)}d ago`;
 }
 
-const SEVERITY_STYLES: Record<string, { color: string; bg: string; icon: typeof AlertCircle }> = {
-  CRITICAL: { color: "#f85149", bg: "rgba(248,81,73,0.12)", icon: AlertCircle },
-  HIGH:     { color: "#e3b341", bg: "rgba(227,179,65,0.12)", icon: Flame },
-  MEDIUM:   { color: "#d29922", bg: "rgba(210,153,34,0.10)", icon: AlertTriangle },
+const SEVERITY_META: Record<
+  string,
+  { color: string; bg: string; icon: CoolIconName; tone: IconTone }
+> = {
+  CRITICAL: {
+    color: "var(--ag-danger)",
+    bg: "color-mix(in srgb, var(--ag-danger) 12%, transparent)",
+    icon: "warning",
+    tone: "danger",
+  },
+  HIGH: {
+    color: "var(--ag-warning)",
+    bg: "color-mix(in srgb, var(--ag-warning) 12%, transparent)",
+    icon: "shield-warning",
+    tone: "warning",
+  },
+  MEDIUM: {
+    color: "var(--ag-orange)",
+    bg: "color-mix(in srgb, var(--ag-orange) 10%, transparent)",
+    icon: "warning",
+    tone: "coral",
+  },
 };
 
 export function RecentAlertsCard({ scans }: Props) {
@@ -56,83 +74,51 @@ export function RecentAlertsCard({ scans }: Props) {
   }
 
   return (
-    <div
-      className="rounded-xl p-5 flex flex-col"
-      style={{ background: "#161b22", border: "1px solid #30363d" }}
-    >
-      {/* Header */}
+    <div className="ag-card p-5 flex flex-col">
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2.5">
-          <div
-            className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0"
-            style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.25)" }}
-          >
-            <Bell className="h-4 w-4" style={{ color: "#f87171" }} />
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-white">Recent Alerts</h3>
-            <p className="text-[10px]" style={{ color: "#8b949e" }}>Security notifications</p>
-          </div>
+        <div className="flex items-center gap-2">
+          <CoolIcon name="bell" tone="warning" size={18} />
+          <h2 className="ag-text-section">Recent alerts</h2>
         </div>
-        <Link href="/alerts" className="transition-colors hover:text-white" style={{ color: "#6e7681" }}>
-          <ArrowRight className="h-4 w-4" />
+        <Link
+          href="/alerts"
+          className="ag-text-link transition-opacity hover:opacity-80"
+        >
+          View all
         </Link>
       </div>
 
-      {/* Alert list */}
       {alerts.length === 0 ? (
-        <div
-          className="flex-1 flex items-center justify-center py-6 rounded-lg"
-          style={{ background: "#0d1117", border: "1px solid #21262d" }}
-        >
-          <p className="text-xs" style={{ color: "#6e7681" }}>No active alerts — all clear</p>
+        <div className="flex flex-col items-center justify-center py-8 gap-2">
+          <CoolIcon name="shield-check" tone="safe" size={28} />
+          <p className="ag-text-body">No critical alerts</p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {alerts.map((alert, i) => {
-            const style = SEVERITY_STYLES[alert.severity];
-            const Icon = style.icon;
+        <ul className="space-y-3 flex-1">
+          {alerts.map((a) => {
+            const meta = SEVERITY_META[a.severity];
             return (
-              <Link key={i} href={`/scans/${alert.scanId}`} className="block group">
-                <div
-                  className="flex gap-3 rounded-lg p-3 transition-opacity group-hover:opacity-80"
-                  style={{ background: "#0d1117", border: "1px solid #21262d" }}
+              <li key={a.scanId}>
+                <Link
+                  href={`/scans/${a.scanId}`}
+                  className="block rounded-lg p-3 transition-colors hover:bg-white/[0.03]"
+                  style={{ background: meta.bg, border: `1px solid color-mix(in srgb, ${meta.color} 22%, transparent)` }}
                 >
-                  <div
-                    className="h-7 w-7 rounded-md flex items-center justify-center shrink-0 mt-0.5"
-                    style={{ background: style.bg }}
-                  >
-                    <Icon className="h-3.5 w-3.5" style={{ color: style.color }} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <span
-                        className="text-xs font-medium leading-tight"
-                        style={{ color: "#c9d1d9" }}
-                      >
-                        <span
-                          className="inline mr-1 text-[10px] font-bold"
-                          style={{ color: style.color }}
-                        >
-                          [{alert.severity}]
-                        </span>
-                        {alert.text}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between mt-1">
-                      <p className="text-[10px]" style={{ color: "#6e7681" }}>
-                        {alert.sub}
-                      </p>
-                      <p className="text-[10px] shrink-0 ml-2" style={{ color: "#6e7681" }}>
-                        {alert.timeAgo}
+                  <div className="flex items-start gap-2.5">
+                    <CoolIcon name={meta.icon} tone={meta.tone} size={16} className="mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="ag-text-title font-medium leading-snug">{a.text}</p>
+                      <p className="ag-text-meta mt-1">{a.sub}</p>
+                      <p className="ag-text-meta mt-1" style={{ color: meta.color }}>
+                        {a.timeAgo}
                       </p>
                     </div>
                   </div>
-                </div>
-              </Link>
+                </Link>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
     </div>
   );

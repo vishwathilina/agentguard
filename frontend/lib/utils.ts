@@ -8,30 +8,30 @@ export function cn(...inputs: ClassValue[]) {
 
 export function severityColor(severity: Severity): string {
   return {
-    CRITICAL: "text-red-400 bg-red-500/10 border-red-500/30",
-    HIGH:     "text-orange-400 bg-orange-500/10 border-orange-500/30",
-    MEDIUM:   "text-yellow-400 bg-yellow-500/10 border-yellow-500/30",
-    LOW:      "text-blue-400 bg-blue-500/10 border-blue-500/30",
-    INFO:     "text-gray-400 bg-gray-500/10 border-gray-500/30",
-  }[severity] ?? "text-gray-400 bg-gray-500/10 border-gray-500/30";
+    CRITICAL: "text-[var(--ag-danger)] bg-[color-mix(in_srgb,var(--ag-danger)_12%,transparent)] border-[color-mix(in_srgb,var(--ag-danger)_30%,transparent)]",
+    HIGH:     "text-[var(--ag-warning)] bg-[color-mix(in_srgb,var(--ag-warning)_12%,transparent)] border-[color-mix(in_srgb,var(--ag-warning)_30%,transparent)]",
+    MEDIUM:   "text-[var(--ag-orange)] bg-[color-mix(in_srgb,var(--ag-orange)_12%,transparent)] border-[color-mix(in_srgb,var(--ag-orange)_28%,transparent)]",
+    LOW:      "text-[var(--ag-safe)] bg-[color-mix(in_srgb,var(--ag-safe)_10%,transparent)] border-[color-mix(in_srgb,var(--ag-safe)_25%,transparent)]",
+    INFO:     "text-[var(--ag-neutral)] bg-[color-mix(in_srgb,var(--ag-neutral)_8%,transparent)] border-[color-mix(in_srgb,var(--ag-neutral)_22%,transparent)]",
+  }[severity] ?? "text-[var(--ag-neutral)] bg-[color-mix(in_srgb,var(--ag-neutral)_8%,transparent)] border-[color-mix(in_srgb,var(--ag-neutral)_22%,transparent)]";
 }
 
 export function severityDot(severity: Severity): string {
   return {
-    CRITICAL: "bg-red-400",
-    HIGH:     "bg-orange-400",
-    MEDIUM:   "bg-yellow-400",
-    LOW:      "bg-blue-400",
-    INFO:     "bg-gray-400",
-  }[severity] ?? "bg-gray-400";
+    CRITICAL: "bg-[var(--ag-danger)]",
+    HIGH:     "bg-[var(--ag-warning)]",
+    MEDIUM:   "bg-[var(--ag-orange)]",
+    LOW:      "bg-[var(--ag-safe)]",
+    INFO:     "bg-[var(--ag-neutral)]",
+  }[severity] ?? "bg-[var(--ag-neutral)]";
 }
 
 export function scoreColor(score: number | null): string {
-  if (score === null) return "text-gray-500";
-  if (score >= 80) return "text-green-400";
-  if (score >= 60) return "text-yellow-400";
-  if (score >= 40) return "text-orange-400";
-  return "text-red-400";
+  if (score === null) return "text-[var(--ag-text-muted)]";
+  if (score >= 80) return "text-[var(--ag-safe)]";
+  if (score >= 60) return "text-[var(--ag-lime)]";
+  if (score >= 40) return "text-[var(--ag-warning)]";
+  return "text-[var(--ag-danger)]";
 }
 
 export function formatDate(iso: string | null): string {

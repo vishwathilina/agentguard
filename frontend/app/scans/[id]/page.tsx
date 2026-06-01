@@ -9,6 +9,9 @@ import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { VulnerabilityRow } from "@/components/scan/VulnerabilityRow";
 import { AiSummaryPanel } from "@/components/scan/AiSummaryPanel";
 import { ScanStatusBadge } from "@/components/scan/ScanStatusBadge";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { CoolIcon } from "@/components/icons/CoolIcon";
+import Link from "next/link";
 
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8080";
 
@@ -16,6 +19,8 @@ const TECH_LABEL: Record<string, string> = {
   SPRING_BOOT:    "Spring Boot",
   GRADLE_JAVA:    "Gradle / Java",
   NODE_JS:        "Node.js",
+  PYTHON:         "Python",
+  GO:             "Go",
   DOCKER:         "Docker",
   KUBERNETES:     "Kubernetes",
   TERRAFORM:      "Terraform",
@@ -23,25 +28,39 @@ const TECH_LABEL: Record<string, string> = {
 };
 
 const TOOL_LABEL: Record<string, string> = {
-  GITLEAKS:               "Gitleaks",
-  NPM_AUDIT:              "npm audit",
-  TRIVY:                  "Trivy",
-  TFSEC:                  "tfsec",
-  KUBE_BENCH:             "kube-bench",
-  OWASP_DEPENDENCY_CHECK: "OWASP Dep-Check",
-  KUBE_BENCH:             "Kubernetes config",
+  GITLEAKS:         "Gitleaks",
+  NPM_AUDIT:        "npm audit",
+  TRIVY:            "Trivy",
+  TFSEC:            "tfsec",
+  KUBE_BENCH:       "Kubernetes config",
+  OWASP_DEP_CHECK:  "OWASP Dep-Check",
+  SEMGREP:          "Semgrep",
+  CHECKOV:          "Checkov",
+  HADOLINT:         "Hadolint",
+  BANDIT:           "Bandit",
+  OSV_SCANNER:      "OSV Scanner",
+  GRYPE:            "Grype",
+  DOCKLE:           "Dockle",
 };
 
 function deriveScanners(stacks: string[], targetType: string): string[] {
   const s = new Set(stacks);
   const scanners: string[] = [];
-  if (targetType === "DOCKER_IMAGE" || s.has("DOCKER"))   scanners.push("Trivy");
-  if (targetType === "GIT_REPO")                          scanners.push("Gitleaks");
-  if (s.has("TERRAFORM"))                                 scanners.push("tfsec");
-  if (s.has("KUBERNETES"))                                scanners.push("Kubernetes config");
-  if (s.has("NODE_JS"))                                   scanners.push("npm audit");
-  if (s.has("SPRING_BOOT") || s.has("GRADLE_JAVA"))       scanners.push("OWASP Dep-Check");
-  return scanners;
+  if (targetType === "GIT_REPO") {
+    scanners.push("Gitleaks", "Semgrep");
+  }
+  if (targetType === "DOCKER_IMAGE" || s.has("DOCKER")) {
+    scanners.push("Trivy", "Grype");
+    if (targetType === "DOCKER_IMAGE") scanners.push("Dockle");
+    if (s.has("DOCKER")) scanners.push("Hadolint");
+  }
+  if (s.has("TERRAFORM")) scanners.push("tfsec", "Checkov");
+  if (s.has("KUBERNETES")) scanners.push("Kubernetes config", "Checkov");
+  if (s.has("NODE_JS")) scanners.push("npm audit");
+  if (s.has("PYTHON")) scanners.push("Bandit");
+  if (s.has("NODE_JS") || s.has("PYTHON") || s.has("GO")) scanners.push("OSV Scanner");
+  if (s.has("SPRING_BOOT") || s.has("GRADLE_JAVA")) scanners.push("OWASP Dep-Check");
+  return [...new Set(scanners)];
 }
 
 interface LogEntry {
@@ -85,22 +104,22 @@ function applyCompletePayload(prev: Scan, data: CompletePayload): Scan {
 
 function logColor(level: string) {
   switch (level) {
-    case "ERROR": return "text-red-400";
-    case "WARN":  return "text-yellow-400";
-    case "OK":    return "text-green-400";
-    case "DONE":  return "text-indigo-300 font-semibold";
-    default:      return "text-gray-300";
+    case "ERROR": return "text-[var(--ag-danger)]";
+    case "WARN":  return "text-[var(--ag-warning)]";
+    case "OK":    return "text-[var(--ag-safe)]";
+    case "DONE":  return "text-[var(--ag-cyan)] font-semibold";
+    default:      return "text-[var(--ag-text-muted)]";
   }
 }
 
 function logPrefix(type: string) {
   switch (type) {
-    case "TOOL_START": return "text-blue-400";
-    case "TOOL_DONE":  return "text-green-400";
-    case "TOOL_ERROR": return "text-red-400";
-    case "COMPLETE":   return "text-indigo-400";
-    case "FAILED":     return "text-red-500";
-    default:           return "text-gray-500";
+    case "TOOL_START": return "text-[var(--ag-cyan)]";
+    case "TOOL_DONE":  return "text-[var(--ag-safe)]";
+    case "TOOL_ERROR": return "text-[var(--ag-danger)]";
+    case "COMPLETE":   return "text-[var(--ag-cyan)]";
+    case "FAILED":     return "text-[var(--ag-danger)]";
+    default:           return "text-[var(--ag-text-muted)] opacity-60";
   }
 }
 
@@ -213,41 +232,40 @@ function ScanLogTerminal({
   logEndRef: RefObject<HTMLDivElement | null>;
 }) {
   return (
-    <div className="rounded-xl overflow-hidden" style={{ background: "#0d1117", border: "1px solid #30363d" }}>
-      {/* Terminal title bar */}
-      <div
-        className="flex items-center gap-2 px-4 py-2.5"
-        style={{ background: "#161b22", borderBottom: "1px solid #30363d" }}
-      >
-        <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#f85149" }} />
-        <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#e3b341" }} />
-        <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#3fb950" }} />
-        <span className="ml-3 text-xs font-mono" style={{ color: "#6e7681" }}>
+    <div className="ag-card overflow-hidden p-0">
+      <div className="flex items-center gap-2 px-4 py-2.5 border-b ag-divider ag-card-elevated rounded-none">
+        <span className="h-2.5 w-2.5 rounded-full" style={{ background: "var(--ag-danger)" }} />
+        <span className="h-2.5 w-2.5 rounded-full" style={{ background: "var(--ag-warning)" }} />
+        <span className="h-2.5 w-2.5 rounded-full" style={{ background: "var(--ag-safe)" }} />
+        <span className="ml-3 ag-text-meta font-mono">
           scan:{scanId.slice(0, 8)}…
         </span>
-        <span className="ml-auto text-xs font-mono flex items-center gap-2" style={{ color: "#6e7681" }}>
+        <span className="ml-auto ag-text-meta font-mono flex items-center gap-2">
           {logs.length} events
           {isLive ? (
             wsConnected ? (
-              <span className="inline-flex items-center gap-1" style={{ color: "#3fb950" }}>
-                <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ background: "#3fb950" }} />
+              <span className="inline-flex items-center gap-1" style={{ color: "var(--ag-safe)" }}>
+                <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ background: "var(--ag-safe)" }} />
                 live
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1" style={{ color: "#e3b341" }}>
-                <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ background: "#e3b341" }} />
+              <span className="inline-flex items-center gap-1" style={{ color: "var(--ag-warning)" }}>
+                <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ background: "var(--ag-warning)" }} />
                 connecting…
               </span>
             )
           ) : (
-            <span style={{ color: "#484f58" }}>archived</span>
+            <span className="opacity-50">archived</span>
           )}
         </span>
       </div>
 
-      <div className="h-96 overflow-y-auto p-4 font-mono text-xs space-y-0.5" style={{ background: "#0d1117" }}>
+      <div
+        className="h-96 overflow-y-auto p-4 font-mono ag-text-body space-y-0.5"
+        style={{ background: "var(--ag-bg)" }}
+      >
         {logs.length === 0 ? (
-          <div className="flex items-center gap-2 font-mono text-xs" style={{ color: "#6e7681" }}>
+          <div className="flex items-center gap-2 font-mono ag-text-body">
             {isLive
               ? <span className="animate-pulse">Waiting for scan events…</span>
               : <span>No log events recorded for this scan.</span>
@@ -256,7 +274,7 @@ function ScanLogTerminal({
         ) : (
           logs.map((entry) => (
             <div key={entry.id} className="flex gap-3 leading-relaxed">
-              <span className="shrink-0 select-none tabular-nums" style={{ color: "#484f58" }}>
+              <span className="shrink-0 select-none tabular-nums opacity-50">
                 {new Date(entry.ts).toLocaleTimeString([], { hour12: false })}
               </span>
               <span className={`shrink-0 w-10 text-right ${logPrefix(entry.type)}`}>
@@ -508,10 +526,7 @@ export default function ScanDetailPage() {
   if (loading || !scan) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div
-          className="h-8 w-8 rounded-full border-2 animate-spin"
-          style={{ borderColor: "#6366f1", borderTopColor: "transparent" }}
-        />
+        <div className="h-8 w-8 rounded-full border-2 animate-spin ag-spinner" />
       </div>
     );
   }
@@ -525,39 +540,47 @@ export default function ScanDetailPage() {
 
   return (
     <div className="space-y-5 max-w-6xl mx-auto">
-      {/* Header */}
-      <div
-        className="rounded-xl p-5 flex items-start justify-between gap-4"
-        style={{ background: "#161b22", border: "1px solid #30363d" }}
+      <PageHeader
+        icon="shield"
+        tone="primary"
+        title={repoName}
+        subtitle={`${scan.branch ? `Branch: ${scan.branch} · ` : ""}Started: ${formatDate(scan.startedAt)}`}
+        trailing={
+          <Link
+            href="/repositories"
+            className="ag-btn-secondary ml-2 shrink-0"
+            style={{ fontSize: "var(--ag-text-body)" }}
+          >
+            <CoolIcon name="chevron-down" tone="muted" size={14} className="rotate-90" />
+            Infrastructure
+          </Link>
+        }
       >
-        <div className="flex-1 min-w-0">
-          <h1 className="text-base font-semibold text-white truncate">{repoName}</h1>
-          <p className="text-xs mt-1" style={{ color: "#8b949e" }}>
-            {scan.branch && <span>Branch: {scan.branch} · </span>}
-            Started: {formatDate(scan.startedAt)}
-          </p>
-        </div>
         <div className="flex items-center gap-3 shrink-0">
           {scan.securityScore !== null && (
-            <span className={`text-2xl font-bold font-mono ${scoreColor(scan.securityScore)}`}>
-              {scan.securityScore}<span className="text-xs font-normal" style={{ color: "#6e7681" }}>/100</span>
+            <span className={`ag-text-metric-lg font-mono ${scoreColor(scan.securityScore)}`}>
+              {scan.securityScore}
+              <span className="ag-text-metric-denom">/100</span>
             </span>
           )}
           <ScanStatusBadge status={scan.status} />
         </div>
-      </div>
+      </PageHeader>
 
-      {/* Failed scan banner */}
       {scan.status === "FAILED" && (
         <div
-          className="text-sm rounded-xl px-4 py-3 flex items-center gap-2"
-          style={{ background: "rgba(248,81,73,0.08)", border: "1px solid rgba(248,81,73,0.3)", color: "#f85149" }}
+          className="ag-card px-4 py-3 flex items-center gap-2 ag-text-nav"
+          style={{
+            background: "color-mix(in srgb, var(--ag-danger) 8%, transparent)",
+            borderColor: "color-mix(in srgb, var(--ag-danger) 30%, transparent)",
+            color: "var(--ag-danger)",
+          }}
         >
-          This scan failed before it could finish. Restart the backend if you just updated code, then run a new scan from Repositories.
+          <CoolIcon name="warning" tone="danger" size={18} className="shrink-0" />
+          This scan failed before it could finish. Restart the backend if you just updated code, then run a new scan from Infrastructure.
         </div>
       )}
 
-      {/* Severity counters */}
       <div className="grid grid-cols-5 gap-3">
         {(["CRITICAL","HIGH","MEDIUM","LOW","INFO"] as Severity[]).map((s) => {
           const count = s === "CRITICAL" ? scan.totalCritical
@@ -569,30 +592,29 @@ export default function ScanDetailPage() {
           return (
             <button
               key={s}
+              type="button"
               onClick={() => setSeverityFilter((prev) => prev === s ? "" : s)}
-              className={`rounded-xl p-3 text-center transition-all ${severityColor(s)} ${
-                isSelected ? "ring-2 ring-offset-1 ring-current" : ""
+              className={`ag-stat-card text-center transition-all border ${severityColor(s)} ${
+                isSelected
+                  ? "ring-2 ring-[var(--ag-cyan)] ring-offset-2 ring-offset-[var(--ag-bg)]"
+                  : "hover:opacity-90"
               }`}
-              style={isSelected ? { ringOffsetColor: "#0d1117" } : {}}
             >
-              <p className="text-2xl font-bold font-mono">{count}</p>
-              <p className="text-[11px] font-semibold mt-0.5 tracking-wide">{s}</p>
+              <p className="ag-text-metric-lg">{count}</p>
+              <p className="ag-text-label mt-0.5">{s}</p>
             </button>
           );
         })}
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div
-          className="flex w-full gap-1 p-1 rounded-xl"
-          style={{ background: "#161b22", border: "1px solid #30363d" }}
-        >
+        <div className="ag-card flex w-full gap-1 p-1">
           {([
-            { value: "live",             label: "Scan Log",              extra: isActive ? (
-              <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full animate-pulse" style={{ background: "#3fb950" }} />
+            { value: "live",             label: "Scan log",              extra: isActive ? (
+              <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full animate-pulse" style={{ background: "var(--ag-safe)" }} />
             ) : null },
             { value: "vulnerabilities", label: `Vulnerabilities (${filteredVulns.length})`, extra: null },
-            { value: "ai",              label: "AI Analysis",             extra: null },
+            { value: "ai",              label: "AI analysis",             extra: null },
             { value: "tools",           label: "Tools",                   extra: null },
           ] as const).map(({ value, label, extra }) => {
             const selected = activeTab === value;
@@ -601,14 +623,17 @@ export default function ScanDetailPage() {
                 key={value}
                 type="button"
                 onClick={() => setActiveTab(value)}
-                className="flex-1 inline-flex items-center justify-center gap-1 rounded-lg px-3 py-2 text-xs font-medium transition-all"
+                className={`flex-1 inline-flex items-center justify-center gap-1 rounded-lg px-3 py-2 ag-text-nav font-medium transition-all ${
+                  selected ? "text-[var(--ag-text)]" : "text-[var(--ag-text-muted)] hover:text-[var(--ag-text)]"
+                }`}
                 style={
                   selected
-                    ? { background: "#21262d", color: "#f0f6fc", border: "1px solid #484f58", boxShadow: "0 1px 2px rgba(0,0,0,0.3)" }
-                    : { background: "transparent", color: "#8b949e", border: "1px solid transparent" }
+                    ? {
+                        background: "color-mix(in srgb, var(--ag-cyan) 10%, transparent)",
+                        border: "1px solid color-mix(in srgb, var(--ag-cyan) 32%, transparent)",
+                      }
+                    : { background: "transparent", border: "1px solid transparent" }
                 }
-                onMouseEnter={(e) => { if (!selected) e.currentTarget.style.color = "#c9d1d9"; }}
-                onMouseLeave={(e) => { if (!selected) e.currentTarget.style.color = "#8b949e"; }}
               >
                 {label}
                 {extra}
@@ -631,17 +656,11 @@ export default function ScanDetailPage() {
         {/* ── Vulnerabilities ── */}
         <TabsContent value="vulnerabilities" className="mt-4">
           {isActive && vulns.length === 0 ? (
-            <div
-              className="rounded-xl p-10 text-center text-sm"
-              style={{ background: "#161b22", border: "1px solid #30363d", color: "#6e7681" }}
-            >
+            <div className="ag-card p-10 text-center ag-text-body">
               Scan in progress — vulnerabilities will appear here when complete.
             </div>
           ) : filteredVulns.length === 0 ? (
-            <div
-              className="rounded-xl p-10 text-center text-sm"
-              style={{ background: "#161b22", border: "1px solid #30363d", color: "#6e7681" }}
-            >
+            <div className="ag-card p-10 text-center ag-text-body">
               No vulnerabilities found{severityFilter ? ` with severity ${severityFilter}` : ""}.
             </div>
           ) : (
@@ -684,51 +703,63 @@ export default function ScanDetailPage() {
 
         {/* ── Tools ── */}
         <TabsContent value="tools" className="mt-4 space-y-4">
-          <div className="rounded-xl p-4" style={{ background: "#161b22", border: "1px solid #30363d" }}>
-            <p className="text-[11px] font-semibold tracking-wider uppercase mb-3" style={{ color: "#6e7681" }}>
-              Detected Tech Stacks
-            </p>
+          <div className="ag-card p-4">
+            <p className="ag-text-label mb-3">Detected tech stack</p>
             {techStacks.length === 0 ? (
-              <p className="text-sm" style={{ color: "#6e7681" }}>
-                {isActive ? "Detecting…" : "Not yet detected."}
-              </p>
+              <p className="ag-text-body">{isActive ? "Detecting…" : "Not yet detected."}</p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {techStacks.map((t) => (
-                  <span key={t} className="inline-flex items-center px-3 py-1 rounded-full bg-indigo-900/40 text-indigo-300 text-xs border border-indigo-800">
+                  <span
+                    key={t}
+                    className="ag-text-meta px-3 py-1 rounded-full"
+                    style={{
+                      background: "color-mix(in srgb, var(--ag-cyan) 12%, transparent)",
+                      border: "1px solid color-mix(in srgb, var(--ag-cyan) 30%, transparent)",
+                      color: "var(--ag-cyan)",
+                    }}
+                  >
                     {TECH_LABEL[t] ?? t}
                   </span>
                 ))}
               </div>
             )}
           </div>
-          <div className="rounded-xl p-4" style={{ background: "#161b22", border: "1px solid #30363d" }}>
-            <p className="text-[11px] font-semibold tracking-wider uppercase mb-3" style={{ color: "#6e7681" }}>
-              {toolRuns.length > 0 ? "Scanners Run" : "Scanners"}
+          <div className="ag-card p-4">
+            <p className="ag-text-label mb-3">
+              {toolRuns.length > 0 ? "Scanners run" : "Scanners"}
             </p>
             {scannerLabels.length === 0 ? (
-              <p className="text-sm" style={{ color: "#6e7681" }}>
-                {isActive ? "Waiting for scanners…" : "No scanners recorded."}
-              </p>
+              <p className="ag-text-body">{isActive ? "Waiting for scanners…" : "No scanners recorded."}</p>
             ) : toolRuns.length > 0 ? (
               <div className="space-y-2">
                 {toolRuns.map((run) => (
                   <div
                     key={run.id}
                     className="flex items-center justify-between gap-3 rounded-lg px-3 py-2"
-                    style={{ background: "#0d1117", border: "1px solid #21262d" }}
+                    style={{ background: "var(--ag-bg)", border: "1px solid var(--ag-border)" }}
                   >
-                    <span className="text-sm text-white">
-                      {TOOL_LABEL[run.toolName] ?? run.toolName}
-                    </span>
+                    <span className="ag-text-title">{TOOL_LABEL[run.toolName] ?? run.toolName}</span>
                     <span
-                      className="text-xs px-2 py-0.5 rounded-full"
+                      className="ag-text-meta px-2 py-0.5 rounded-full"
                       style={
                         run.status === "COMPLETED"
-                          ? { color: "#3fb950", background: "rgba(63,185,80,0.12)", border: "1px solid rgba(63,185,80,0.25)" }
+                          ? {
+                              color: "var(--ag-safe)",
+                              background: "color-mix(in srgb, var(--ag-safe) 12%, transparent)",
+                              border: "1px solid color-mix(in srgb, var(--ag-safe) 28%, transparent)",
+                            }
                           : run.status === "FAILED"
-                            ? { color: "#f85149", background: "rgba(248,81,73,0.12)", border: "1px solid rgba(248,81,73,0.25)" }
-                            : { color: "#8b949e", background: "rgba(139,148,158,0.10)", border: "1px solid #30363d" }
+                            ? {
+                                color: "var(--ag-danger)",
+                                background: "color-mix(in srgb, var(--ag-danger) 12%, transparent)",
+                                border: "1px solid color-mix(in srgb, var(--ag-danger) 28%, transparent)",
+                              }
+                            : {
+                                color: "var(--ag-text-muted)",
+                                background: "color-mix(in srgb, var(--ag-neutral) 10%, transparent)",
+                                border: "1px solid var(--ag-border)",
+                              }
                       }
                     >
                       {run.status}
@@ -741,8 +772,12 @@ export default function ScanDetailPage() {
                 {scannerLabels.map((s) => (
                   <span
                     key={s}
-                    className="inline-flex items-center px-3 py-1 rounded-full text-xs"
-                    style={{ background: "rgba(99,102,241,0.10)", border: "1px solid rgba(99,102,241,0.25)", color: "#a5b4fc" }}
+                    className="ag-text-meta px-3 py-1 rounded-full"
+                    style={{
+                      background: "color-mix(in srgb, var(--ag-cyan) 10%, transparent)",
+                      border: "1px solid color-mix(in srgb, var(--ag-cyan) 25%, transparent)",
+                      color: "var(--ag-cyan)",
+                    }}
                   >
                     {s}
                   </span>

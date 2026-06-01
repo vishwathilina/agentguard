@@ -2,9 +2,9 @@
 
 import { useState, useRef, useEffect } from "react";
 import { AiAnalysis, Scan } from "@/types";
-import { Brain, TrendingUp, ShieldCheck, Info, RotateCcw, Loader2 } from "lucide-react";
 import { severityColor } from "@/lib/utils";
 import { aiApi } from "@/lib/api";
+import { CoolIcon } from "@/components/icons/CoolIcon";
 
 interface Props {
   analysis: AiAnalysis | null;
@@ -48,110 +48,102 @@ export function AiSummaryPanel({ analysis, analysisLoaded, scan, onAnalysisRetri
           pollRef.current = null;
         }
       }, 10_000);
-    } catch (err: any) {
-      setRetryMessage(err?.response?.data?.error ?? "Failed to queue AI analysis. Try again.");
+    } catch (err: unknown) {
+      const msg =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
+          : undefined;
+      setRetryMessage(msg ?? "Failed to queue AI analysis. Try again.");
     } finally {
       setRetrying(false);
     }
   }
 
-  // Scan not finished yet
   if (scan.status !== "COMPLETED") {
     return (
-      <div
-        className="rounded-xl p-8 text-center text-sm"
-        style={{ background: "#161b22", border: "1px solid #30363d", color: "#6e7681" }}
-      >
+      <div className="ag-card p-10 text-center ag-text-body">
         AI analysis will be available once the scan completes.
       </div>
     );
   }
 
-  // Scan complete but still fetching for the first time
   if (!analysisLoaded) {
     return (
-      <div
-        className="rounded-xl p-8 text-center space-y-3"
-        style={{ background: "#161b22", border: "1px solid #30363d" }}
-      >
-        <div
-          className="h-8 w-8 rounded-full border-2 animate-spin mx-auto"
-          style={{ borderColor: "#6366f1", borderTopColor: "transparent" }}
-        />
-        <p className="text-sm" style={{ color: "#6e7681" }}>Loading AI analysis…</p>
+      <div className="ag-card p-10 text-center space-y-3">
+        <div className="h-8 w-8 rounded-full border-2 animate-spin ag-spinner mx-auto" />
+        <p className="ag-text-body">Loading AI analysis…</p>
       </div>
     );
   }
 
-  // Clean scan — no findings
   const totalFindings =
     scan.totalCritical + scan.totalHigh + scan.totalMedium + scan.totalLow + scan.totalInfo;
   if (!analysis && totalFindings === 0) {
     return (
-      <div
-        className="rounded-xl p-8 text-center space-y-3"
-        style={{ background: "#161b22", border: "1px solid #30363d" }}
-      >
+      <div className="ag-card p-10 text-center space-y-3">
         <div
           className="h-12 w-12 rounded-xl flex items-center justify-center mx-auto"
-          style={{ background: "rgba(63,185,80,0.12)", border: "1px solid rgba(63,185,80,0.25)" }}
+          style={{
+            background: "color-mix(in srgb, var(--ag-safe) 12%, transparent)",
+            border: "1px solid color-mix(in srgb, var(--ag-safe) 28%, transparent)",
+          }}
         >
-          <ShieldCheck className="h-6 w-6" style={{ color: "#3fb950" }} />
+          <CoolIcon name="shield-check" tone="safe" size={24} />
         </div>
-        <p className="font-medium" style={{ color: "#c9d1d9" }}>Clean scan — no vulnerabilities found</p>
-        <p className="text-xs" style={{ color: "#6e7681" }}>
+        <p className="ag-text-title">Clean scan — no vulnerabilities found</p>
+        <p className="ag-text-body">
           AI deep analysis is skipped when there is nothing to prioritize.
         </p>
       </div>
     );
   }
 
-  // Analysis not available — show retry option
   if (!analysis) {
     return (
-      <div
-        className="rounded-xl p-6 space-y-4"
-        style={{ background: "#161b22", border: "1px solid #30363d" }}
-      >
+      <div className="ag-card p-6 space-y-4">
         <div className="flex items-start gap-3">
-          <Info className="h-4 w-4 shrink-0 mt-0.5" style={{ color: "#6e7681" }} />
+          <CoolIcon name="warning" tone="muted" size={18} className="shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="text-sm font-medium text-white">AI analysis not available</p>
-            <p className="text-xs mt-1 leading-relaxed" style={{ color: "#6e7681" }}>
+            <p className="ag-text-title">AI analysis not available</p>
+            <p className="ag-text-body mt-1 leading-relaxed">
               The AI service did not produce an analysis for this scan. This can happen if the
               AI endpoint was temporarily unreachable. You can retry without re-running the full scan.
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <button
+            type="button"
             onClick={handleRetry}
             disabled={retrying}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all"
-            style={{
-              background: retrying ? "rgba(99,102,241,0.05)" : "rgba(99,102,241,0.12)",
-              border: "1px solid rgba(99,102,241,0.3)",
-              color: "#818cf8",
-              cursor: retrying ? "not-allowed" : "pointer",
-            }}
+            className="ag-btn-secondary disabled:opacity-50"
           >
             {retrying ? (
-              <><Loader2 className="h-4 w-4 animate-spin" /> Queuing…</>
+              <>
+                <div className="h-4 w-4 rounded-full border-2 border-t-transparent animate-spin ag-spinner" />
+                Queuing…
+              </>
             ) : (
-              <><RotateCcw className="h-4 w-4" /> Retry AI Analysis</>
+              <>
+                <CoolIcon name="data" tone="primary" size={14} />
+                Retry AI analysis
+              </>
             )}
           </button>
 
           {retryMessage && (
-            <p className="text-xs" style={{ color: retryMessage.startsWith("Failed") ? "#f85149" : "#3fb950" }}>
+            <p
+              className="ag-text-body"
+              style={{ color: retryMessage.startsWith("Failed") ? "var(--ag-danger)" : "var(--ag-safe)" }}
+            >
               {retryMessage}
             </p>
           )}
         </div>
 
         {retryMessage && !retryMessage.startsWith("Failed") && (
-          <p className="text-xs" style={{ color: "#6e7681" }}>
+          <p className="ag-text-body">
             Analysis is running in the background. This page will update automatically when complete.
           </p>
         )}
@@ -159,52 +151,47 @@ export function AiSummaryPanel({ analysis, analysisLoaded, scan, onAnalysisRetri
     );
   }
 
-  // ── Analysis available ───────────────────────────────────────────────────
   return (
     <div className="space-y-4">
-      {/* Executive summary */}
       <div
-        className="rounded-xl p-5"
-        style={{ background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.2)" }}
+        className="ag-card p-5"
+        style={{
+          background: "color-mix(in srgb, var(--ag-cyan) 6%, transparent)",
+          borderColor: "color-mix(in srgb, var(--ag-cyan) 22%, transparent)",
+        }}
       >
-        <div className="flex items-center gap-2 font-semibold text-sm mb-3" style={{ color: "#818cf8" }}>
-          <Brain className="h-4 w-4" /> Executive Summary
+        <div className="flex items-center gap-2 ag-text-title mb-3" style={{ color: "var(--ag-cyan)" }}>
+          <CoolIcon name="data" tone="primary" size={18} />
+          Executive summary
         </div>
-        <p className="text-sm leading-relaxed" style={{ color: "#c9d1d9" }}>
-          {analysis.executiveSummary}
-        </p>
-        <p className="text-xs mt-3" style={{ color: "#484f58" }}>Model: {analysis.modelUsed}</p>
+        <p className="ag-text-nav leading-relaxed text-[var(--ag-text)]">{analysis.executiveSummary}</p>
+        <p className="ag-text-meta mt-3 opacity-70">Model: {analysis.modelUsed}</p>
       </div>
 
-      {/* Top risks */}
       {analysis.topRisks.length > 0 && (
-        <div
-          className="rounded-xl p-5"
-          style={{ background: "#161b22", border: "1px solid #30363d" }}
-        >
-          <div className="flex items-center gap-2 font-semibold text-sm mb-4" style={{ color: "#e3b341" }}>
-            <TrendingUp className="h-4 w-4" /> Top Risks
+        <div className="ag-card p-5">
+          <div className="flex items-center gap-2 ag-text-title mb-4" style={{ color: "var(--ag-warning)" }}>
+            <CoolIcon name="trending-up" tone="warning" size={18} />
+            Top risks
           </div>
           <div className="space-y-3">
             {analysis.topRisks.map((risk, i) => (
               <div key={i} className="flex items-start gap-3">
-                <span className="text-xs font-bold mt-0.5 w-4 shrink-0" style={{ color: "#6e7681" }}>
-                  {i + 1}.
-                </span>
+                <span className="ag-text-meta font-bold mt-0.5 w-4 shrink-0 tabular-nums">{i + 1}.</span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold border shrink-0 ${severityColor(risk.severity)}`}
+                      className={`inline-flex items-center px-2 py-0.5 rounded ag-text-meta font-bold border shrink-0 ${severityColor(risk.severity)}`}
                     >
                       {risk.severity}
                     </span>
-                    <span className="text-sm text-white font-medium">{risk.title}</span>
+                    <span className="ag-text-title font-medium">{risk.title}</span>
                     {risk.cveId && (
-                      <span className="text-xs font-mono" style={{ color: "#6e7681" }}>{risk.cveId}</span>
+                      <span className="ag-text-meta font-mono">{risk.cveId}</span>
                     )}
                   </div>
-                  <p className="text-xs mt-1" style={{ color: "#818cf8" }}>
-                    AI Risk Score: {Number(risk.aiRiskScore).toFixed(1)} / 10
+                  <p className="ag-text-meta mt-1" style={{ color: "var(--ag-cyan)" }}>
+                    AI risk score: {Number(risk.aiRiskScore).toFixed(1)} / 10
                   </p>
                 </div>
               </div>
@@ -213,19 +200,10 @@ export function AiSummaryPanel({ analysis, analysisLoaded, scan, onAnalysisRetri
         </div>
       )}
 
-      {/* Full report */}
       {analysis.prioritizedFindingsMd && (
-        <div
-          className="rounded-xl p-5"
-          style={{ background: "#161b22", border: "1px solid #30363d" }}
-        >
-          <p
-            className="text-[11px] font-semibold tracking-wider uppercase mb-3"
-            style={{ color: "#6e7681" }}
-          >
-            Full AI Report
-          </p>
-          <pre className="text-sm whitespace-pre-wrap font-sans leading-relaxed" style={{ color: "#c9d1d9" }}>
+        <div className="ag-card p-5">
+          <p className="ag-text-label mb-3">Full AI report</p>
+          <pre className="ag-text-nav whitespace-pre-wrap font-sans leading-relaxed text-[var(--ag-text)]">
             {analysis.prioritizedFindingsMd}
           </pre>
         </div>

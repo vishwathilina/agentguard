@@ -190,6 +190,17 @@ public class ScanOrchestrator {
             case KUBE_BENCH      -> stacks.contains(TechStack.KUBERNETES);
             case NPM_AUDIT       -> stacks.contains(TechStack.NODE_JS);
             case OWASP_DEP_CHECK -> stacks.contains(TechStack.SPRING_BOOT) || stacks.contains(TechStack.GRADLE_JAVA);
+            case SEMGREP         -> type == TargetType.GIT_REPO;
+            case CHECKOV         -> stacks.contains(TechStack.TERRAFORM)
+                                 || stacks.contains(TechStack.KUBERNETES)
+                                 || stacks.contains(TechStack.DOCKER);
+            case HADOLINT        -> stacks.contains(TechStack.DOCKER);
+            case BANDIT          -> stacks.contains(TechStack.PYTHON);
+            case OSV_SCANNER     -> stacks.contains(TechStack.NODE_JS)
+                                 || stacks.contains(TechStack.PYTHON)
+                                 || stacks.contains(TechStack.GO);
+            case GRYPE           -> type == TargetType.DOCKER_IMAGE || stacks.contains(TechStack.DOCKER);
+            case DOCKLE          -> type == TargetType.DOCKER_IMAGE;
         };
     }
 

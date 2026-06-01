@@ -23,41 +23,30 @@ interface Props { scans: Scan[] }
 
 export function RecentScansTable({ scans }: Props) {
   return (
-    <div
-      className="rounded-xl overflow-hidden"
-      style={{ background: "#161b22", border: "1px solid #30363d" }}
-    >
-      {/* Header */}
+    <div className="ag-card overflow-hidden p-0">
       <div
         className="px-5 py-4 flex items-center justify-between"
-        style={{ borderBottom: "1px solid #30363d" }}
+        style={{ borderBottom: "1px solid var(--ag-border)" }}
       >
         <div>
-          <h3 className="text-sm font-semibold text-white">Recent Scan History</h3>
-          <p className="text-[10px] mt-0.5" style={{ color: "#8b949e" }}>All findings</p>
+          <h3 className="ag-text-section">Projects</h3>
+          <p className="ag-text-meta mt-1">Recent scan history</p>
         </div>
-        <Link href="/scans"
-          className="flex items-center gap-1 text-xs transition-colors hover:text-white"
-          style={{ color: "#6e7681" }}
-        >
+        <Link href="/scans" className="ag-text-link flex items-center gap-1 transition-opacity hover:opacity-80">
           View all <ArrowRight className="h-3 w-3" />
         </Link>
       </div>
 
       {scans.length === 0 ? (
-        <div className="p-10 text-center text-sm" style={{ color: "#6e7681" }}>
+        <div className="p-10 text-center ag-text-body">
           No scans yet. Go to Repositories to start your first scan.
         </div>
       ) : (
-        <table className="w-full text-sm">
+        <table className="w-full">
           <thead>
-            <tr style={{ borderBottom: "1px solid #21262d" }}>
+            <tr style={{ borderBottom: "1px solid var(--ag-border)" }}>
               {["Time", "Target Type", "Name", "Status", "Findings"].map((h) => (
-                <th
-                  key={h}
-                  className="px-5 py-3 text-left text-[11px] font-semibold tracking-wider"
-                  style={{ color: "#6e7681" }}
-                >
+                <th key={h} className="px-5 py-3 text-left ag-text-label">
                   {h}
                 </th>
               ))}
@@ -75,13 +64,13 @@ export function RecentScansTable({ scans }: Props) {
               return (
                 <tr
                   key={scan.id}
-                  style={{ borderBottom: "1px solid #21262d" }}
+                  style={{ borderBottom: "1px solid var(--ag-border)" }}
                   className="transition-colors"
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "#0d1117")}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "var(--ag-bg)")}
                   onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                 >
                   {/* Time */}
-                  <td className="px-5 py-3 text-xs whitespace-nowrap" style={{ color: "#8b949e" }}>
+                  <td className="px-5 py-3 ag-text-meta whitespace-nowrap">
                     {formatDate(scan.startedAt)}
                   </td>
 
@@ -89,7 +78,7 @@ export function RecentScansTable({ scans }: Props) {
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-2">
                       <TypeIcon className="h-3.5 w-3.5 shrink-0" style={{ color: "#6e7681" }} />
-                      <span className="text-xs" style={{ color: "#8b949e" }}>{typeInfo.label}</span>
+                      <span className="ag-text-meta">{typeInfo.label}</span>
                     </div>
                   </td>
 
@@ -97,13 +86,13 @@ export function RecentScansTable({ scans }: Props) {
                   <td className="px-5 py-3">
                     <Link
                       href={`/scans/${scan.id}`}
-                      className="text-xs font-medium transition-colors hover:text-white block truncate max-w-[180px]"
-                      style={{ color: "#58a6ff" }}
+                      className="ag-text-title font-medium transition-colors hover:opacity-90 block truncate max-w-[180px]"
+                      style={{ color: "var(--ag-cyan)" }}
                     >
                       {name}
                     </Link>
                     {scan.branch && (
-                      <span className="text-[10px]" style={{ color: "#6e7681" }}>
+                      <span className="ag-text-meta">
                         {scan.branch}
                       </span>
                     )}
@@ -117,7 +106,7 @@ export function RecentScansTable({ scans }: Props) {
                         style={{ background: ss.dot }}
                       />
                       <span
-                        className="text-xs font-medium px-2 py-0.5 rounded-full"
+                        className="ag-text-meta font-semibold px-2 py-0.5 rounded-full"
                         style={{ background: ss.bg, color: ss.color }}
                       >
                         {scan.status === "COMPLETED" ? "Compliant" : scan.status === "FAILED" ? "Findings" : scan.status}
@@ -128,25 +117,25 @@ export function RecentScansTable({ scans }: Props) {
                   {/* Findings */}
                   <td className="px-5 py-3">
                     {totalFindings === 0 ? (
-                      <span className="text-xs font-semibold" style={{ color: "#3fb950" }}>0</span>
+                      <span className="ag-text-meta font-semibold" style={{ color: "var(--ag-safe)" }}>0</span>
                     ) : (
                       <div className="flex items-center gap-2">
                         {scan.totalCritical > 0 && (
-                          <span className="text-xs font-semibold" style={{ color: "#f85149" }}>
+                          <span className="ag-text-meta font-semibold" style={{ color: "var(--ag-danger)" }}>
                             {scan.totalCritical}C
                           </span>
                         )}
                         {scan.totalHigh > 0 && (
-                          <span className="text-xs font-semibold" style={{ color: "#e3b341" }}>
+                          <span className="ag-text-meta font-semibold" style={{ color: "var(--ag-warning)" }}>
                             {scan.totalHigh}H
                           </span>
                         )}
                         {scan.totalMedium > 0 && (
-                          <span className="text-xs font-semibold" style={{ color: "#d29922" }}>
+                          <span className="ag-text-meta font-semibold" style={{ color: "var(--ag-orange)" }}>
                             {scan.totalMedium}M
                           </span>
                         )}
-                        <span className="text-xs" style={{ color: "#6e7681" }}>
+                        <span className="ag-text-meta">
                           ({totalFindings})
                         </span>
                       </div>
